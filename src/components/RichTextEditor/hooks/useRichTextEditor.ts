@@ -108,7 +108,7 @@ export const useRichTextEditor = ({ value, onChange, inline, courseId, courseDom
   // Handle image replacement
   const handleImageUploaded = useCallback((newImageUrl: string, fileId: string, fileName: string) => {
     if (selectedImage && editorRef.current) {
-      // Create the Canvas-specific HTML structure
+      // Create the Canvas-specific HTML structure with full URL
       const canvasImageHtml = `<div class="grid-row" style="padding: 0%;"><img id="${fileId}" src="${newImageUrl}" alt="${fileName}" width="100%" /></div>`;
       
       // Replace the selected image with the new Canvas structure
