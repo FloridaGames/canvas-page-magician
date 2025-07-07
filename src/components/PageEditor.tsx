@@ -21,6 +21,7 @@ export const PageEditor = ({ course, page, isNewPage, onBack }: PageEditorProps)
     handleSave,
     handleInputChange,
     getPageTitle,
+    getCourseDomain,
   } = usePageEditor({ course, page, isNewPage, onBack });
 
   return (
@@ -47,6 +48,8 @@ export const PageEditor = ({ course, page, isNewPage, onBack }: PageEditorProps)
           isNewPage={isNewPage}
           isSaving={isSaving}
           hasChanges={hasChanges}
+          courseId={course.id}
+          courseDomain={getCourseDomain()}
           onInputChange={handleInputChange}
           onSave={handleSave}
         />

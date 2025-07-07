@@ -4,11 +4,15 @@ interface UseRichTextEditorProps {
   value: string;
   onChange: (value: string) => void;
   inline: boolean;
+  courseId?: string;
+  courseDomain?: string;
 }
 
-export const useRichTextEditor = ({ value, onChange, inline }: UseRichTextEditorProps) => {
+export const useRichTextEditor = ({ value, onChange, inline, courseId, courseDomain }: UseRichTextEditorProps) => {
   const editorRef = useRef<HTMLDivElement>(null);
   const [showToolbar, setShowToolbar] = useState(!inline);
+  const [selectedImage, setSelectedImage] = useState<HTMLImageElement | null>(null);
+  const [showImageUploader, setShowImageUploader] = useState(false);
 
   // Update editor content when value changes
   useEffect(() => {
@@ -76,13 +80,80 @@ export const useRichTextEditor = ({ value, onChange, inline }: UseRichTextEditor
     handleInput();
   }, [handleInput]);
 
+  // Handle image selection
+  const handleImageClick = useCallback((e: Event) => {
+    const target = e.target as HTMLElement;
+    if (target.tagName === 'IMG') {
+      e.preventDefault();
+      e.stopPropagation();
+      
+      // Remove previous selection
+      if (selectedImage) {
+        selectedImage.style.outline = '';
+        selectedImage.style.cursor = '';
+      }
+      
+      const img = target as HTMLImageElement;
+      setSelectedImage(img);
+      
+      // Add visual selection indicator
+      img.style.outline = '2px solid #3b82f6';
+      img.style.cursor = 'pointer';
+      
+      // Show upload dialog
+      setShowImageUploader(true);
+    }
+  }, [selectedImage]);
+
+  // Handle image replacement
+  const handleImageUploaded = useCallback((newImageUrl: string) => {
+    if (selectedImage && editorRef.current) {
+      selectedImage.src = newImageUrl;
+      selectedImage.style.outline = '';
+      selectedImage.style.cursor = '';
+      setSelectedImage(null);
+      handleInput();
+    }
+  }, [selectedImage]);
+
+  // Add image click listener
+  useEffect(() => {
+    const editor = editorRef.current;
+    if (editor) {
+      editor.addEventListener('click', handleImageClick);
+      return () => {
+        editor.removeEventListener('click', handleImageClick);
+      };
+    }
+  }, [handleImageClick]);
+
+  // Remove selection when clicking outside
+  const handleDocumentClick = useCallback((e: Event) => {
+    if (selectedImage && editorRef.current && !editorRef.current.contains(e.target as Node)) {
+      selectedImage.style.outline = '';
+      selectedImage.style.cursor = '';
+      setSelectedImage(null);
+    }
+  }, [selectedImage]);
+
+  useEffect(() => {
+    document.addEventListener('click', handleDocumentClick);
+    return () => {
+      document.removeEventListener('click', handleDocumentClick);
+    };
+  }, [handleDocumentClick]);
+
   return {
     editorRef,
     showToolbar,
+    selectedImage,
+    showImageUploader,
     handleInput,
     handleFocus,
     handleBlur,
     handleSelection,
     handlePaste,
+    handleImageUploaded,
+    setShowImageUploader,
   };
 };

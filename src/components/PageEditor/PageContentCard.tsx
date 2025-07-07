@@ -8,6 +8,8 @@ interface PageContentCardProps {
   isNewPage: boolean;
   isSaving: boolean;
   hasChanges: boolean;
+  courseId: string;
+  courseDomain?: string;
   onInputChange: (field: string, value: string) => void;
   onSave: () => void;
 }
@@ -17,6 +19,8 @@ export const PageContentCard = ({
   isNewPage,
   isSaving,
   hasChanges,
+  courseId,
+  courseDomain,
   onInputChange,
   onSave,
 }: PageContentCardProps) => {
@@ -48,8 +52,10 @@ export const PageContentCard = ({
         <HybridEditor
           value={body}
           onChange={(value) => onInputChange('body', value)}
-          placeholder="Start writing your page content... The editor will automatically preserve Canvas layouts and collapsible boxes."
+          placeholder="Start writing your page content... The editor will automatically preserve Canvas layouts and collapsible boxes. Click on images to upload new ones."
           className="w-full"
+          courseId={courseId}
+          courseDomain={courseDomain}
         />
       </CardContent>
     </Card>

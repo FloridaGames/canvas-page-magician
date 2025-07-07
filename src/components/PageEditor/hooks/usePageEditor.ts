@@ -132,6 +132,14 @@ export const usePageEditor = ({ course, page, isNewPage, onBack }: UsePageEditor
     return "Edit Page";
   };
 
+  const getCourseDomain = () => {
+    try {
+      return extractDomainFromUrl(course.url).domain;
+    } catch {
+      return undefined;
+    }
+  };
+
   return {
     title,
     body,
@@ -141,5 +149,6 @@ export const usePageEditor = ({ course, page, isNewPage, onBack }: UsePageEditor
     handleSave,
     handleInputChange,
     getPageTitle,
+    getCourseDomain,
   };
 };

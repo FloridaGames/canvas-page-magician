@@ -1,12 +1,15 @@
 import { MenuBar } from './RichTextEditor/MenuBar';
 import { useRichTextEditor } from './RichTextEditor/hooks/useRichTextEditor';
+import { ImageUploader } from './RichTextEditor/ImageUploader';
 
 interface RichTextEditorProps {
   value: string;
   onChange: (value: string) => void;
   placeholder?: string;
   className?: string;
-  inline?: boolean; // New prop for inline editing mode
+  inline?: boolean;
+  courseId?: string;
+  courseDomain?: string;
 }
 
 export const RichTextEditor = ({ 
@@ -14,17 +17,23 @@ export const RichTextEditor = ({
   onChange, 
   placeholder = "Start writing your content...",
   className = "",
-  inline = false
+  inline = false,
+  courseId,
+  courseDomain
 }: RichTextEditorProps) => {
   const {
     editorRef,
     showToolbar,
+    selectedImage,
+    showImageUploader,
     handleInput,
     handleFocus,
     handleBlur,
     handleSelection,
     handlePaste,
-  } = useRichTextEditor({ value, onChange, inline });
+    handleImageUploaded,
+    setShowImageUploader,
+  } = useRichTextEditor({ value, onChange, inline, courseId, courseDomain });
 
   return (
     <div className={`rich-text-editor ${inline ? 'relative' : 'border border-border rounded-lg overflow-hidden bg-background'} ${className}`}>
@@ -56,6 +65,14 @@ export const RichTextEditor = ({
           ✓ Canvas LMS details/summary elements detected and preserved
         </div>
       )}
+
+      <ImageUploader
+        isOpen={showImageUploader}
+        onClose={() => setShowImageUploader(false)}
+        onImageUploaded={handleImageUploaded}
+        courseId={courseId}
+        courseDomain={courseDomain}
+      />
     </div>
   );
 };

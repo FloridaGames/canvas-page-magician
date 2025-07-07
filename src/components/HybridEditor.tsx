@@ -6,7 +6,9 @@ interface HybridEditorProps {
   onChange: (value: string) => void;
   placeholder?: string;
   className?: string;
-  inline?: boolean; // Add inline prop
+  inline?: boolean;
+  courseId?: string;
+  courseDomain?: string;
 }
 
 export const HybridEditor = ({ 
@@ -14,7 +16,9 @@ export const HybridEditor = ({
   onChange, 
   placeholder = "Start writing your content...",
   className = "",
-  inline = false
+  inline = false,
+  courseId,
+  courseDomain
 }: HybridEditorProps) => {
 
   if (inline) {
@@ -25,6 +29,8 @@ export const HybridEditor = ({
         placeholder={placeholder}
         className={className}
         inline={true}
+        courseId={courseId}
+        courseDomain={courseDomain}
       />
     );
   }
@@ -46,6 +52,8 @@ export const HybridEditor = ({
         placeholder={placeholder}
         className="min-h-[500px]"
         inline={false}
+        courseId={courseId}
+        courseDomain={courseDomain}
       />
     </div>
   );
