@@ -166,23 +166,6 @@ export const PageEditor = ({ course, page, isNewPage, onBack }: PageEditorProps)
             <ArrowLeft className="h-4 w-4 mr-2" />
             Back
           </Button>
-          
-          <Button 
-            onClick={handleSave} 
-            disabled={isSaving || !hasChanges}
-          >
-            {isSaving ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Saving...
-              </>
-            ) : (
-              <>
-                <Save className="h-4 w-4 mr-2" />
-                {isNewPage ? "Create Page" : "Save Changes"}
-              </>
-            )}
-          </Button>
         </div>
       </div>
 
@@ -231,7 +214,26 @@ export const PageEditor = ({ course, page, isNewPage, onBack }: PageEditorProps)
 
         <Card>
           <CardHeader>
-            <CardTitle>Page Content</CardTitle>
+            <div className="flex items-center justify-between">
+              <CardTitle>Page Content</CardTitle>
+              <Button 
+                onClick={handleSave} 
+                disabled={isSaving || !hasChanges}
+                size="sm"
+              >
+                {isSaving ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Saving...
+                  </>
+                ) : (
+                  <>
+                    <Save className="h-4 w-4 mr-2" />
+                    {isNewPage ? "Create Page" : "Save Changes"}
+                  </>
+                )}
+              </Button>
+            </div>
           </CardHeader>
           <CardContent>
             <HybridEditor

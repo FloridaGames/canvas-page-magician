@@ -55,10 +55,32 @@ export const RichTextEditor = ({
     handleInput();
   }, [handleInput]);
 
-  // Handle focus to show toolbar in inline mode
-  const handleFocus = useCallback(() => {
+  // Handle focus to show toolbar in inline mode and capture current styling
+  const handleFocus = useCallback((e: React.FocusEvent<HTMLDivElement>) => {
     if (inline) {
       setShowToolbar(true);
+      
+      // Capture current element's styling and apply to new content
+      const selection = window.getSelection();
+      if (selection && selection.rangeCount > 0) {
+        const range = selection.getRangeAt(0);
+        const currentElement = range.startContainer.nodeType === Node.TEXT_NODE 
+          ? range.startContainer.parentElement 
+          : range.startContainer as HTMLElement;
+        
+        if (currentElement && currentElement !== editorRef.current) {
+          // Apply the current element's styling to the editor
+          const computedStyle = window.getComputedStyle(currentElement);
+          if (editorRef.current) {
+            editorRef.current.style.fontFamily = computedStyle.fontFamily;
+            editorRef.current.style.fontSize = computedStyle.fontSize;
+            editorRef.current.style.fontWeight = computedStyle.fontWeight;
+            editorRef.current.style.color = computedStyle.color;
+            editorRef.current.style.fontStyle = computedStyle.fontStyle;
+            editorRef.current.style.textDecoration = computedStyle.textDecoration;
+          }
+        }
+      }
     }
   }, [inline]);
 
