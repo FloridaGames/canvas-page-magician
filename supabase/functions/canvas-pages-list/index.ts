@@ -28,13 +28,13 @@ serve(async (req) => {
       throw new Error('Canvas API key not configured');
     }
 
-    // Construct Canvas API URL for pages
-    const apiUrl = `https://${domain}/api/v1/courses/${courseId}/pages`;
+    // Construct Canvas API URL for pages with body content
+    const apiUrl = `https://${domain}/api/v1/courses/${courseId}/pages?include[]=body`;
 
-    console.log(`Fetching pages from: ${apiUrl}`);
+    console.log(`Fetching pages with content from: ${apiUrl}`);
 
     const response = await fetch(apiUrl, {
-      method: 'GET',
+      method: 'GET', 
       headers: {
         'Authorization': `Bearer ${apiKey}`,
         'Content-Type': 'application/json',
@@ -53,19 +53,54 @@ serve(async (req) => {
 
     const pagesData = await response.json();
 
-    // Transform the data to match our interface
-    const pages = pagesData.map((page: any) => ({
-      page_id: page.page_id,
-      title: page.title,
-      body: page.body || '',
-      published: page.published,
-      url: page.url,
-      created_at: page.created_at,
-      updated_at: page.updated_at,
-    }));
+    // For pages without full content, fetch individual page details
+    const pagesWithContent = await Promise.all(
+      pagesData.map(async (page: any) => {
+        if (!page.body) {
+          try {
+            // Fetch individual page to get full content
+            const pageResponse = await fetch(
+              `https://${domain}/api/v1/courses/${courseId}/pages/${page.url}`,
+              {
+                method: 'GET',
+                headers: {
+                  'Authorization': `Bearer ${apiKey}`,
+                  'Content-Type': 'application/json',
+                },
+              }
+            );
+            
+            if (pageResponse.ok) {
+              const fullPage = await pageResponse.json();
+              return {
+                page_id: fullPage.page_id,
+                title: fullPage.title,
+                body: fullPage.body || '',
+                published: fullPage.published,
+                url: fullPage.url,
+                created_at: fullPage.created_at,
+                updated_at: fullPage.updated_at,
+              };
+            }
+          } catch (error) {
+            console.log(`Failed to fetch full content for page ${page.title}:`, error);
+          }
+        }
+        
+        return {
+          page_id: page.page_id,
+          title: page.title,
+          body: page.body || '',
+          published: page.published,
+          url: page.url,
+          created_at: page.created_at,
+          updated_at: page.updated_at,
+        };
+      })
+    );
 
     return new Response(
-      JSON.stringify({ pages }),
+      JSON.stringify({ pages: pagesWithContent }),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       }

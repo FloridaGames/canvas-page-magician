@@ -4,15 +4,17 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
-import { Textarea } from "@/components/ui/textarea";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Separator } from "@/components/ui/separator";
+import { RichTextEditor } from "@/components/RichTextEditor";
 import { 
   Save, 
   ArrowLeft, 
   Eye, 
   FileText, 
   Loader2,
-  AlertCircle
+  AlertCircle,
+  Code2
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
@@ -235,19 +237,43 @@ export const PageEditor = ({ course, page, isNewPage, onBack }: PageEditorProps)
             <CardTitle>Page Content</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="space-y-2">
-              <Label htmlFor="body">Content (HTML)</Label>
-              <Textarea
-                id="body"
-                value={body}
-                onChange={(e) => handleInputChange('body', e.target.value)}
-                placeholder="Enter your page content here... You can use HTML tags."
-                className="min-h-[400px] font-mono text-sm"
-              />
-              <p className="text-sm text-muted-foreground">
-                You can use HTML tags for formatting. Canvas will render this content in your course.
-              </p>
-            </div>
+            <Tabs defaultValue="editor" className="w-full">
+              <TabsList className="grid w-full grid-cols-2">
+                <TabsTrigger value="editor">Rich Text Editor</TabsTrigger>
+                <TabsTrigger value="html">HTML Source</TabsTrigger>
+              </TabsList>
+              
+              <TabsContent value="editor" className="mt-4">
+                <div className="space-y-2">
+                  <Label>Visual Editor</Label>
+                  <RichTextEditor
+                    value={body}
+                    onChange={(value) => handleInputChange('body', value)}
+                    placeholder="Start writing your page content..."
+                    className="min-h-[400px]"
+                  />
+                  <p className="text-sm text-muted-foreground">
+                    Use the visual editor to format your content. This will be rendered in Canvas.
+                  </p>
+                </div>
+              </TabsContent>
+              
+              <TabsContent value="html" className="mt-4">
+                <div className="space-y-2">
+                  <Label htmlFor="body-html">HTML Source Code</Label>
+                  <textarea
+                    id="body-html"
+                    value={body}
+                    onChange={(e) => handleInputChange('body', e.target.value)}
+                    placeholder="Enter your HTML content here..."
+                    className="w-full min-h-[400px] p-3 font-mono text-sm border border-border rounded-md bg-background resize-none focus:outline-none focus:ring-2 focus:ring-ring"
+                  />
+                  <p className="text-sm text-muted-foreground">
+                    Edit the raw HTML code. Canvas will render this content in your course.
+                  </p>
+                </div>
+              </TabsContent>
+            </Tabs>
           </CardContent>
         </Card>
 
