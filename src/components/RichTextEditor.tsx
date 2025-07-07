@@ -125,7 +125,17 @@ export const RichTextEditor = ({
         window.tinymce.remove(`#${editorId}`);
       }
     };
-  }, [value, onChange]);
+  }, [onChange]); // Remove value from dependency to avoid re-initialization
+
+  // Update editor content when value changes
+  useEffect(() => {
+    if (window.tinymce && editorRef.current) {
+      const editor = window.tinymce.get(editorRef.current.querySelector('textarea')?.id);
+      if (editor && editor.getContent() !== value) {
+        editor.setContent(value || '');
+      }
+    }
+  }, [value]);
 
   return (
     <div className={`rich-text-editor ${className}`}>
