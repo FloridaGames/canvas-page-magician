@@ -22,7 +22,7 @@ export const HybridEditor = ({
           Visual Editor
         </Label>
         <p className="text-sm text-muted-foreground mt-1">
-          ReactQuill editor with full Canvas LMS support - preserves custom HTML like details/summary
+          ReactQuill editor with Canvas LMS preservation - details/summary elements are protected during editing
         </p>
       </div>
 
