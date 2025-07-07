@@ -80,7 +80,27 @@ const Index = () => {
       />
       
       <main className="container mx-auto px-4 py-8">
-        <ImageUploadDemo />
+        {currentState === "input" && (
+          <CourseInput onCourseSet={handleCourseSet} />
+        )}
+
+        {currentState === "pages" && course && (
+          <PagesList
+            course={course}
+            onPageSelect={handlePageSelect}
+            onNewPage={handleNewPage}
+            onDuplicatePage={handleDuplicatePage}
+          />
+        )}
+
+        {currentState === "editor" && course && (
+          <PageEditor
+            course={course}
+            page={selectedPage}
+            isNewPage={isEditingNew}
+            onBack={handleBackToPages}
+          />
+        )}
       </main>
     </div>
   );

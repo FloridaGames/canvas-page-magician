@@ -186,6 +186,9 @@ export const ImageUploader = ({
                   <X className="h-4 w-4" />
                 </Button>
               </div>
+              <div className="text-xs text-muted-foreground">
+                File: {selectedFile?.name} ({selectedFile ? Math.round(selectedFile.size / 1024) : 0} KB)
+              </div>
             </div>
           )}
 
