@@ -1,37 +1,5 @@
-import { CKEditor } from '@ckeditor/ckeditor5-react';
-import {
-  ClassicEditor,
-  Bold,
-  Italic,
-  Underline,
-  Strikethrough,
-  Code,
-  Link,
-  Paragraph,
-  Heading,
-  BlockQuote,
-  CodeBlock,
-  List,
-  Alignment,
-  Font,
-  Highlight,
-  Indent,
-  IndentBlock,
-  Table,
-  TableToolbar,
-  HorizontalLine,
-  SourceEditing,
-  GeneralHtmlSupport,
-  Essentials,
-  Autoformat,
-  AutoLink,
-  Clipboard,
-  Enter,
-  SelectAll,
-  ShiftEnter,
-  Typing,
-  Undo
-} from 'ckeditor5';
+import ReactQuill from 'react-quill';
+import 'react-quill/dist/quill.snow.css';
 
 interface RichTextEditorProps {
   value: string;
@@ -47,95 +15,46 @@ export const RichTextEditor = ({
   className = ""
 }: RichTextEditorProps) => {
   
-  const editorConfiguration = {
-    plugins: [
-      Essentials,
-      Bold,
-      Italic,
-      Underline,
-      Strikethrough,
-      Code,
-      Font,
-      Highlight,
-      Paragraph,
-      Heading,
-      BlockQuote,
-      CodeBlock,
-      List,
-      Link,
-      Alignment,
-      Indent,
-      IndentBlock,
-      Table,
-      TableToolbar,
-      HorizontalLine,
-      SourceEditing,
-      GeneralHtmlSupport,
-      Autoformat,
-      AutoLink,
-      Clipboard,
-      Enter,
-      SelectAll,
-      ShiftEnter,
-      Typing,
-      Undo
-    ],
+  // Custom formats to preserve Canvas LMS HTML elements
+  const formats = [
+    'header', 'font', 'size',
+    'bold', 'italic', 'underline', 'strike', 'blockquote',
+    'list', 'bullet', 'indent',
+    'link', 'image', 'video',
+    'align', 'color', 'background',
+    'code', 'code-block',
+    'script', 'clean'
+  ];
+
+  const modules = {
     toolbar: [
-      'undo', 'redo',
-      '|',
-      'sourceEditing',
-      '|',
-      'heading',
-      '|',
-      'bold', 'italic', 'underline', 'strikethrough', 'code',
-      '|',
-      'fontSize', 'fontColor', 'fontBackgroundColor', 'highlight',
-      '|',
-      'alignment',
-      '|',
-      'numberedList', 'bulletedList',
-      'outdent', 'indent',
-      '|',
-      'link', 'insertTable',
-      '|',
-      'blockQuote', 'codeBlock', 'horizontalLine'
+      [{ 'header': [1, 2, 3, 4, 5, 6, false] }],
+      ['bold', 'italic', 'underline', 'strike'],
+      [{ 'color': [] }, { 'background': [] }],
+      [{ 'align': [] }],
+      [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+      [{ 'indent': '-1'}, { 'indent': '+1' }],
+      ['link', 'image', 'video'],
+      ['blockquote', 'code-block'],
+      ['clean']
     ],
-    table: {
-      contentToolbar: [
-        'tableColumn',
-        'tableRow',
-        'mergeTableCells'
-      ]
-    },
-    // General HTML Support - preserves Canvas LMS HTML elements
-    htmlSupport: {
-      allow: [
-        {
-          name: /.*/,
-          attributes: /.*/, 
-          classes: /.*/,
-          styles: /.*/
-        }
-      ]
-    },
-    placeholder
+    clipboard: {
+      // Preserve all HTML elements when pasting
+      matchVisual: false
+    }
   };
 
   return (
     <div className={`rich-text-editor ${className}`}>
-      <CKEditor
-        editor={ClassicEditor}
-        config={editorConfiguration}
-        data={value}
-        onChange={(event, editor) => {
-          const data = editor.getData();
-          onChange(data);
-        }}
-        onReady={(editor) => {
-          console.log('CKEditor 5 is ready for Canvas LMS content.');
-        }}
-        onError={(error) => {
-          console.error('CKEditor error:', error);
+      <ReactQuill
+        theme="snow"
+        value={value}
+        onChange={onChange}
+        placeholder={placeholder}
+        formats={formats}
+        modules={modules}
+        style={{
+          minHeight: '300px'
         }}
       />
     </div>

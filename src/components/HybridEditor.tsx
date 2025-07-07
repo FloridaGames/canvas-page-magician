@@ -22,7 +22,7 @@ export const HybridEditor = ({
           Visual Editor
         </Label>
         <p className="text-sm text-muted-foreground mt-1">
-          CKEditor 5 with full Canvas LMS support - edit inline with live preview
+          ReactQuill editor with full Canvas LMS support - preserves custom HTML like details/summary
         </p>
       </div>
 
