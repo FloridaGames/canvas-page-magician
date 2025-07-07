@@ -8,7 +8,6 @@ import { Upload, Loader2, X, Crop, RotateCw } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import Cropper from 'cropperjs';
-import 'cropperjs/dist/cropper.css';
 
 interface ImageUploaderProps {
   isOpen: boolean;
@@ -375,13 +374,28 @@ export const ImageUploader = ({
                   <Label>Crop & Adjust Image</Label>
                 </div>
                 
-                <div className="border rounded-lg overflow-hidden bg-muted/20">
+                <div className="border rounded-lg overflow-hidden bg-muted/20 relative">
+                  <style>
+                    {`
+                      .cropper-container { position: relative; }
+                      .cropper-wrap-box { position: relative; }
+                      .cropper-canvas { position: relative; }
+                      .cropper-crop-box { position: absolute; cursor: move; }
+                      .cropper-view-box { position: absolute; cursor: move; overflow: hidden; }
+                      .cropper-dashed { position: absolute; border: 1px dashed #fff; opacity: 0.5; }
+                      .cropper-center { position: absolute; top: 50%; left: 50%; width: 20px; height: 20px; margin: -10px; }
+                      .cropper-face { position: absolute; top: 0; right: 0; bottom: 0; left: 0; background-color: inherit; }
+                      .cropper-point { position: absolute; width: 5px; height: 5px; background-color: #39f; opacity: 0.75; }
+                      .cropper-line { position: absolute; background-color: #39f; }
+                      .cropper-bg { background-image: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAGElEQVQ4T2NkYGAQYcAP3uCTZhw1gGGYhAMA+74DBSCUfhQAAAAASUVORK5CYII='); }
+                    `}
+                  </style>
                   <div style={{ maxHeight: '400px', overflow: 'hidden' }}>
                     <img
                       ref={cropperRef}
                       src={previewUrl}
                       alt="Image to crop"
-                      style={{ maxWidth: '100%', height: 'auto' }}
+                      style={{ maxWidth: '100%', height: 'auto', display: 'block' }}
                     />
                   </div>
                 </div>
