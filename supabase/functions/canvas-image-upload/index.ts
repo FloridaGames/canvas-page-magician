@@ -115,12 +115,12 @@ serve(async (req) => {
       );
     }
 
-    // Step 3: Confirm the upload (if needed)
+    // Step 3: Confirm the upload - Canvas returns a location header
     let fileData;
     const location = fileUploadResponse.headers.get('Location');
     
     if (location) {
-      // Follow the redirect to get file information
+      // Follow the redirect to get the final file information
       const confirmResponse = await fetch(location, {
         headers: {
           'Authorization': `Bearer ${canvasApiKey}`,
@@ -129,33 +129,46 @@ serve(async (req) => {
       
       if (confirmResponse.ok) {
         fileData = await confirmResponse.json();
+        console.log('File confirmed:', fileData);
+      } else {
+        console.error('File confirmation failed:', await confirmResponse.text());
       }
     }
 
-    // If no location header, try to parse response directly
+    // If no location header or confirmation failed, try to parse upload response directly
     if (!fileData) {
       try {
-        fileData = await fileUploadResponse.json();
-      } catch {
-        // If response is not JSON, create a basic response
-        fileData = {
-          id: uploadData.id,
-          filename: fileName,
-          url: uploadData.upload_url,
-        };
+        const responseText = await fileUploadResponse.text();
+        if (responseText) {
+          fileData = JSON.parse(responseText);
+        }
+      } catch (error) {
+        console.error('Failed to parse upload response:', error);
+        throw new Error('Failed to get file information after upload');
       }
     }
 
-    console.log('File upload completed:', fileData);
+    if (!fileData || !fileData.id) {
+      throw new Error('Upload succeeded but file information is incomplete');
+    }
 
+    console.log('File upload completed successfully:', {
+      id: fileData.id,
+      display_name: fileData.display_name || fileName,
+      url: fileData.url
+    });
+
+    // Return the file info in the format expected by the frontend
     return new Response(
       JSON.stringify({
         success: true,
         file: fileData,
-        url: fileData.url || `https://${domain}/courses/${courseId}/files/${fileData.id}/preview`,
         fileId: fileData.id,
-        previewUrl: `/courses/${courseId}/files/${fileData.id}/preview`,
-        fileName: fileName,
+        fileName: fileData.display_name || fileName,
+        // Use the direct URL from Canvas, not a constructed preview URL
+        url: fileData.url,
+        // Also provide the API endpoint for Canvas-specific HTML structure
+        apiEndpoint: `https://${domain}/api/v1/courses/${courseId}/files/${fileData.id}`,
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );

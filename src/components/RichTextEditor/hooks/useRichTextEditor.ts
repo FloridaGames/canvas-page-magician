@@ -108,13 +108,11 @@ export const useRichTextEditor = ({ value, onChange, inline, courseId, courseDom
   }, [selectedImage]);
 
   // Handle image replacement
-  const handleImageUploaded = useCallback((newImageUrl: string, fileId: string, fileName: string) => {
+  const handleImageUploaded = useCallback((newImageUrl: string, fileId: string, fileName: string, apiEndpoint?: string) => {
     if (selectedImage && editorRef.current) {
-      // Use Canvas preview URL format for proper display in Canvas content
-      const canvasPreviewUrl = newImageUrl.includes('/preview') ? newImageUrl : `/courses/${courseId}/files/${fileId}/preview`;
-      
-      // Create the Canvas-specific HTML structure with preview URL
-      const canvasImageHtml = `<img id="${fileId}" src="${canvasPreviewUrl}" alt="${fileName}" data-api-endpoint="https://${courseDomain}/api/v1/courses/${courseId}/files/${fileId}" data-api-returntype="File" />`;
+      // Create the Canvas-specific HTML structure using the direct URL from Canvas
+      // This matches the Python code structure for proper Canvas display
+      const canvasImageHtml = `<img id="${fileId}" src="${newImageUrl}" alt="${fileName}" width="100%" data-api-endpoint="${apiEndpoint || `https://${courseDomain}/api/v1/courses/${courseId}/files/${fileId}`}" data-api-returntype="File" />`;
       
       // Replace the selected image with the new Canvas structure
       const tempDiv = document.createElement('div');
