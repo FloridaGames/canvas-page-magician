@@ -3,6 +3,7 @@ import { CourseInput } from "@/components/CourseInput";
 import { PagesList } from "@/components/PagesList";
 import { PageEditor } from "@/components/PageEditor";
 import { Header } from "@/components/Header";
+import { ImageUploadDemo } from "@/components/ImageUploadDemo";
 
 export type AppState = "input" | "pages" | "editor";
 
@@ -79,27 +80,7 @@ const Index = () => {
       />
       
       <main className="container mx-auto px-4 py-8">
-        {currentState === "input" && (
-          <CourseInput onCourseSet={handleCourseSet} />
-        )}
-
-        {currentState === "pages" && course && (
-          <PagesList
-            course={course}
-            onPageSelect={handlePageSelect}
-            onNewPage={handleNewPage}
-            onDuplicatePage={handleDuplicatePage}
-          />
-        )}
-
-        {currentState === "editor" && course && (
-          <PageEditor
-            course={course}
-            page={selectedPage}
-            isNewPage={isEditingNew}
-            onBack={handleBackToPages}
-          />
-        )}
+        <ImageUploadDemo />
       </main>
     </div>
   );
