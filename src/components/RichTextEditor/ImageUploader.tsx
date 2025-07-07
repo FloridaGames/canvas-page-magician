@@ -119,6 +119,9 @@ export const ImageUploader = ({
         description: error instanceof Error ? error.message : "Failed to upload image",
         variant: "destructive",
       });
+      
+      // Important: Call onImageUploaded with empty values to decrement the pending counter
+      onImageUploaded('', '', '', '');
     } finally {
       setIsUploading(false);
     }

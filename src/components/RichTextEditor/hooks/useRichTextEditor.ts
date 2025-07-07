@@ -109,6 +109,14 @@ export const useRichTextEditor = ({ value, onChange, inline, courseId, courseDom
 
   // Handle image replacement
   const handleImageUploaded = useCallback((newImageUrl: string, fileId: string, fileName: string, apiEndpoint?: string) => {
+    // Always decrement pending uploads counter, even on error
+    setPendingUploads(prev => Math.max(0, prev - 1));
+    
+    // If empty values are passed, it indicates an error - just return after decrementing
+    if (!newImageUrl || !fileId || !fileName) {
+      return;
+    }
+    
     if (selectedImage && editorRef.current) {
       // Create the Canvas-specific HTML structure using the direct URL from Canvas
       // This matches the Python code structure for proper Canvas display
@@ -123,9 +131,6 @@ export const useRichTextEditor = ({ value, onChange, inline, courseId, courseDom
       
       // Clear selection
       setSelectedImage(null);
-      
-      // Decrement pending uploads
-      setPendingUploads(prev => Math.max(0, prev - 1));
       
       // Trigger input event to update the content
       handleInput();
