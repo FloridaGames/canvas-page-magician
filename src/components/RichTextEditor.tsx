@@ -10,7 +10,7 @@ interface RichTextEditorProps {
   className?: string;
 }
 
-// Custom Quill module to handle Canvas LMS elements
+// Custom Quill module to handle Canvas LMS elements using Parchment
 let isQuillCustomized = false;
 
 const customizeQuill = () => {
@@ -18,34 +18,33 @@ const customizeQuill = () => {
   
   try {
     const Block = Quill.import('blots/block') as any;
-    const Container = Quill.import('blots/container') as any;
     const Parchment = Quill.import('parchment') as any;
     
-    // Details blot - container for collapsible content
+    // Details blot - block-level collapsible container
     class DetailsBlot extends Block {
       static blotName = 'details';
-      static scope = Parchment.Scope.BLOCK_BLOT;
       static tagName = 'details';
+      static scope = Parchment.Scope.BLOCK_BLOT;
       
       static create(value?: any) {
         const node = super.create();
-        if (value && value.open) {
+        if (value && typeof value === 'object' && value.open) {
           node.setAttribute('open', '');
         }
         return node;
       }
       
       static formats(node: HTMLElement) {
-        return {
-          details: node.hasAttribute('open') ? { open: true } : true
-        };
+        return node.hasAttribute('open') ? { open: true } : true;
       }
       
       format(name: string, value: any) {
         if (name === 'details' && value) {
           const domNode = this.domNode as HTMLElement;
-          if (value.open) {
+          if (typeof value === 'object' && value.open) {
             domNode.setAttribute('open', '');
+          } else if (value === true) {
+            // Keep existing state if just applying format
           } else {
             domNode.removeAttribute('open');
           }
@@ -55,48 +54,29 @@ const customizeQuill = () => {
       }
     }
     
-    // Summary blot - header for details element
+    // Summary blot - header/title for details element
     class SummaryBlot extends Block {
       static blotName = 'summary';
-      static scope = Parchment.Scope.BLOCK_BLOT;
       static tagName = 'summary';
+      static scope = Parchment.Scope.BLOCK_BLOT;
       
-      static create(value?: any) {
+      static create() {
         return super.create();
       }
       
       static formats() {
-        return { summary: true };
+        return true;
       }
     }
     
-    // Create a simple inline blot for preserving HTML
-    const Inline = Quill.import('blots/inline') as any;
-    
-    class PreservedHtmlBlot extends Inline {
-      static blotName = 'preserved-html';
-      static tagName = ['details', 'summary'];
-      
-      static create(value: string) {
-        const node = super.create();
-        node.innerHTML = value;
-        return node;
-      }
-      
-      static formats(node: HTMLElement) {
-        return node.outerHTML;
-      }
-    }
-    
-    // Register the blots
+    // Register the blots with Quill using the proper path syntax
     Quill.register('formats/details', DetailsBlot, true);
     Quill.register('formats/summary', SummaryBlot, true);
-    Quill.register('formats/preserved-html', PreservedHtmlBlot, true);
     
     isQuillCustomized = true;
-    console.log('Canvas LMS elements registered with Quill');
+    console.log('Details and Summary blots registered with Quill using Parchment');
   } catch (error) {
-    console.warn('Failed to register Canvas LMS elements:', error);
+    console.warn('Failed to register Details/Summary blots:', error);
   }
 };
 
