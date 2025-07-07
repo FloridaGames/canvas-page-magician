@@ -109,6 +109,11 @@ export const RichTextEditor = ({
       preserve_whitespace: true,
       allow_unsafe_link_target: true,
       setup: (editor: any) => {
+        editor.on('init', () => {
+          // Set initial content when editor is ready
+          editor.setContent(value || '');
+        });
+        
         editor.on('change keyup', () => {
           onChange(editor.getContent());
         });
