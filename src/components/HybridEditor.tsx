@@ -35,9 +35,10 @@ export const HybridEditor = ({
     setHasComplexHtml(detectComplexHtml(value));
   }, [value]);
 
-  // Auto-switch to HTML mode if complex elements are detected
+  // Auto-switch to HTML mode if very complex elements are detected (TinyMCE handles most cases)
   useEffect(() => {
-    if (hasComplexHtml && !isHtmlMode) {
+    if (hasComplexHtml && !isHtmlMode && value.includes('data-api-')) {
+      // Only auto-switch for very complex Canvas API elements
       setIsHtmlMode(true);
     }
   }, [hasComplexHtml]);
@@ -49,11 +50,11 @@ export const HybridEditor = ({
 
   return (
     <div className={`hybrid-editor ${className}`}>
-      {hasComplexHtml && (
+      {hasComplexHtml && value.includes('data-api-') && (
         <Alert className="mb-4">
           <AlertTriangle className="h-4 w-4" />
           <AlertDescription>
-            This page contains Canvas-specific elements (collapsible boxes, custom styling). 
+            This page contains advanced Canvas API elements. 
             We've switched to HTML mode to preserve the original layout.
           </AlertDescription>
         </Alert>
@@ -69,7 +70,7 @@ export const HybridEditor = ({
             variant={!isHtmlMode ? "default" : "outline"}
             size="sm"
             onClick={() => setIsHtmlMode(false)}
-            disabled={hasComplexHtml}
+            disabled={hasComplexHtml && value.includes('data-api-')}
           >
             <Eye className="h-4 w-4 mr-1" />
             Visual
@@ -110,9 +111,9 @@ export const HybridEditor = ({
             placeholder={placeholder}
             className="min-h-[500px]"
           />
-          <p className="text-sm text-muted-foreground">
-            Use the visual editor for basic formatting. Switch to HTML mode for advanced layouts.
-          </p>
+            <p className="text-sm text-muted-foreground">
+              TinyMCE editor with full Canvas LMS support - preserves collapsible boxes and custom styling.
+            </p>
         </div>
       )}
 

@@ -1,6 +1,5 @@
 import { useEffect, useRef } from 'react';
-import ReactQuill from 'react-quill';
-import 'react-quill/dist/quill.snow.css';
+import { Editor } from '@tinymce/tinymce-react';
 
 interface RichTextEditorProps {
   value: string;
@@ -15,131 +14,86 @@ export const RichTextEditor = ({
   placeholder = "Start writing your content...",
   className = ""
 }: RichTextEditorProps) => {
-  const quillRef = useRef<ReactQuill>(null);
+  const editorRef = useRef<any>(null);
 
-  // Custom toolbar configuration for Canvas pages
-  const modules = {
-    toolbar: [
-      [{ 'header': [1, 2, 3, 4, 5, 6, false] }],
-      [{ 'font': [] }],
-      [{ 'size': [] }],
-      ['bold', 'italic', 'underline', 'strike', 'blockquote'],
-      [{ 'color': [] }, { 'background': [] }],
-      [{ 'list': 'ordered'}, { 'list': 'bullet' }, 
-       { 'indent': '-1'}, { 'indent': '+1' }],
-      [{ 'align': [] }],
-      ['link', 'image', 'video'],
-      ['code-block'],
-      ['clean']
+  // TinyMCE configuration optimized for Canvas LMS HTML
+  const editorConfig = {
+    height: 500,
+    menubar: false,
+    plugins: [
+      'advlist', 'autolink', 'lists', 'link', 'image', 'charmap', 'preview',
+      'anchor', 'searchreplace', 'visualblocks', 'code', 'fullscreen',
+      'insertdatetime', 'media', 'table', 'help', 'wordcount', 'codesample'
     ],
-    clipboard: {
-      // Preserve all HTML content including custom elements
-      matchVisual: false,
-    }
-  };
-
-  // Expanded formats to preserve more HTML elements
-  const formats = [
-    'header', 'font', 'size',
-    'bold', 'italic', 'underline', 'strike', 'blockquote',
-    'color', 'background',
-    'list', 'bullet', 'indent', 'align',
-    'link', 'image', 'video', 'code-block',
-    'div', 'details', 'summary', 'style', 'class', 'id'
-  ];
-
-  // Custom HTML handling to preserve Canvas-specific elements
-  useEffect(() => {
-    if (quillRef.current) {
-      const quill = quillRef.current.getEditor();
-      
-      // Override the clipboard module to preserve custom HTML
-      const originalConvert = quill.clipboard.convert;
-      quill.clipboard.convert = function(html: string) {
-        // Store original HTML if it contains details/summary elements
-        if (html.includes('<details') || html.includes('<summary')) {
-          // Return the HTML as-is for Canvas-specific elements
-          const delta = originalConvert.call(this, html);
-          return delta;
-        }
-        return originalConvert.call(this, html);
-      };
-
-      // Preserve HTML content on paste
-      quill.root.addEventListener('paste', (e) => {
-        e.preventDefault();
-        const clipboardData = e.clipboardData || (window as any).clipboardData;
-        const pastedData = clipboardData.getData('text/html') || clipboardData.getData('text/plain');
-        
-        if (pastedData.includes('<details') || pastedData.includes('<summary')) {
-          // Insert HTML directly for Canvas elements
-          const range = quill.getSelection();
-          if (range) {
-            quill.clipboard.dangerouslyPasteHTML(range.index, pastedData);
-          }
-        } else {
-          // Use normal paste handling
-          quill.clipboard.dangerouslyPasteHTML(pastedData);
-        }
-      });
-    }
-  }, []);
-
-  // Custom styles for the editor
-  useEffect(() => {
-    const style = document.createElement('style');
-    style.textContent = `
-      .ql-editor {
-        min-height: 300px;
-        font-size: 14px;
-        line-height: 1.6;
+    toolbar: [
+      'undo redo | blocks | bold italic underline strikethrough | fontsize forecolor backcolor',
+      'alignleft aligncenter alignright alignjustify | bullist numlist outdent indent',
+      'removeformat | link image media table | code codesample | help'
+    ].join(' | '),
+    content_style: `
+      body { 
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif; 
+        font-size: 14px; 
+        line-height: 1.6; 
+        color: hsl(var(--foreground));
+        background-color: hsl(var(--background));
       }
-      .ql-editor details {
+      details {
         border: 1px solid #C3C3C3;
         margin: 0 0 10px 0;
         background-color: #ffffff;
+        border-radius: 4px;
       }
-      .ql-editor summary {
+      summary {
         padding: 10px;
         cursor: pointer;
         font-weight: bold;
+        background-color: #f8f9fa;
+        border-bottom: 1px solid #C3C3C3;
       }
-      .ql-editor summary:hover {
-        background-color: #f5f5f5;
+      summary:hover {
+        background-color: #e9ecef;
       }
-      .ql-toolbar {
-        border-top: 1px solid hsl(var(--border));
-        border-left: 1px solid hsl(var(--border));
-        border-right: 1px solid hsl(var(--border));
+      .content-box {
+        padding: 10px;
+        border: 1px solid #ddd;
+        margin: 10px 0;
+        border-radius: 4px;
       }
-      .ql-container {
-        border-bottom: 1px solid hsl(var(--border));
-        border-left: 1px solid hsl(var(--border));
-        border-right: 1px solid hsl(var(--border));
-      }
-      .ql-editor.ql-blank::before {
-        color: hsl(var(--muted-foreground));
-        font-style: normal;
-      }
-    `;
-    document.head.appendChild(style);
-
-    return () => {
-      document.head.removeChild(style);
-    };
-  }, []);
+    `,
+    // Preserve all HTML elements including Canvas-specific ones
+    valid_elements: '*[*]',
+    valid_children: '+body[style],+details[summary],+summary[*]',
+    extended_valid_elements: 'details[open|class|style|id],summary[class|style|id]',
+    // Don't remove any elements or attributes
+    verify_html: false,
+    cleanup: false,
+    convert_urls: false,
+    // Preserve whitespace and formatting
+    preserve_whitespace: true,
+    // Allow all styles and attributes
+    allow_unsafe_link_target: true,
+    // Custom setup to preserve Canvas elements
+    setup: (editor: any) => {
+      editor.on('BeforeSetContent', (e: any) => {
+        // Preserve all HTML as-is, especially Canvas elements
+        if (e.content && (e.content.includes('<details') || e.content.includes('<summary'))) {
+          e.content = e.content;
+        }
+      });
+    },
+    // Use API key from environment
+    apiKey: 'no-api-key' // Will be replaced with actual key
+  };
 
   return (
     <div className={`rich-text-editor ${className}`}>
-      <ReactQuill
-        ref={quillRef}
-        theme="snow"
+      <Editor
+        apiKey="no-api-key"
+        onInit={(evt, editor) => editorRef.current = editor}
         value={value}
-        onChange={onChange}
-        modules={modules}
-        formats={formats}
-        placeholder={placeholder}
-        preserveWhitespace={true}
+        onEditorChange={(content) => onChange(content)}
+        init={editorConfig}
       />
     </div>
   );
