@@ -1,13 +1,4 @@
-import { useEditor, EditorContent } from '@tiptap/react';
-import StarterKit from '@tiptap/starter-kit';
-import TextAlign from '@tiptap/extension-text-align';
-import TextStyle from '@tiptap/extension-text-style';
-import Color from '@tiptap/extension-color';
-import Link from '@tiptap/extension-link';
-import Image from '@tiptap/extension-image';
-import Underline from '@tiptap/extension-underline';
-import Placeholder from '@tiptap/extension-placeholder';
-import { Node } from '@tiptap/core';
+import { useRef, useEffect, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { 
   Bold, 
@@ -31,164 +22,70 @@ interface RichTextEditorProps {
   className?: string;
 }
 
-// Custom node for Details element
-const Details = Node.create({
-  name: 'details',
-  
-  group: 'block',
-  
-  content: 'block+',
-  
-  parseHTML() {
-    return [
-      {
-        tag: 'details',
-        preserveWhitespace: 'full',
-      },
-    ]
-  },
-
-  renderHTML({ HTMLAttributes }) {
-    return ['details', HTMLAttributes, 0]
-  },
-
-  addAttributes() {
-    return {
-      open: {
-        default: false,
-        parseHTML: element => element.hasAttribute('open'),
-        renderHTML: attributes => {
-          if (attributes.open) {
-            return { open: '' }
-          }
-          return {}
-        },
-      },
-      style: {
-        default: null,
-        parseHTML: element => element.getAttribute('style'),
-        renderHTML: attributes => {
-          if (!attributes.style) {
-            return {}
-          }
-          return { style: attributes.style }
-        },
-      },
-    }
-  },
-});
-
-// Custom node for Summary element
-const Summary = Node.create({
-  name: 'summary',
-  
-  group: 'block',
-  
-  content: 'inline*',
-  
-  parseHTML() {
-    return [
-      {
-        tag: 'summary',
-        preserveWhitespace: 'full',
-      },
-    ]
-  },
-
-  renderHTML({ HTMLAttributes }) {
-    return ['summary', HTMLAttributes, 0]
-  },
-
-  addAttributes() {
-    return {
-      style: {
-        default: null,
-        parseHTML: element => element.getAttribute('style'),
-        renderHTML: attributes => {
-          if (!attributes.style) {
-            return {}
-          }
-          return { style: attributes.style }
-        },
-      },
-    }
-  },
-});
-
 export const RichTextEditor = ({ 
   value, 
   onChange, 
   placeholder = "Start writing your content...",
   className = ""
 }: RichTextEditorProps) => {
-  
-  const editor = useEditor({
-    extensions: [
-      StarterKit,
-      Underline,
-      Placeholder.configure({
-        placeholder,
-      }),
-      TextAlign.configure({
-        types: ['heading', 'paragraph'],
-      }),
-      TextStyle,
-      Color,
-      Link.configure({
-        openOnClick: false,
-      }),
-      Image,
-      Details,
-      Summary,
-    ],
-    content: value || '<p>Start typing...</p>',
-    onUpdate: ({ editor }) => {
-      console.log('Editor updated:', editor.getHTML());
-      onChange(editor.getHTML());
-    },
-    onCreate: ({ editor }) => {
-      console.log('Editor created with content:', editor.getHTML());
-    },
-    editorProps: {
-      attributes: {
-        class: 'prose prose-sm max-w-none focus:outline-none min-h-[300px] p-4 text-foreground',
-      },
-    },
-  });
+  const editorRef = useRef<HTMLDivElement>(null);
 
-  console.log('Editor instance:', editor);
-  console.log('Initial value:', value);
+  // Update editor content when value changes
+  useEffect(() => {
+    if (editorRef.current && editorRef.current.innerHTML !== value) {
+      editorRef.current.innerHTML = value || '';
+    }
+  }, [value]);
 
-  if (!editor) {
-    return null;
-  }
+  // Handle content changes
+  const handleInput = useCallback(() => {
+    if (editorRef.current) {
+      const content = editorRef.current.innerHTML;
+      onChange(content);
+    }
+  }, [onChange]);
+
+  // Execute formatting commands
+  const execCommand = useCallback((command: string, value?: string) => {
+    document.execCommand(command, false, value);
+    editorRef.current?.focus();
+    handleInput();
+  }, [handleInput]);
+
+  // Handle paste to preserve formatting
+  const handlePaste = useCallback((e: React.ClipboardEvent) => {
+    e.preventDefault();
+    const text = e.clipboardData.getData('text/html') || e.clipboardData.getData('text/plain');
+    document.execCommand('insertHTML', false, text);
+    handleInput();
+  }, [handleInput]);
 
   const MenuBar = () => {
     return (
       <div className="border-b border-border p-2 flex flex-wrap gap-1">
         <Button
+          type="button"
           variant="ghost"
           size="sm"
-          onClick={() => editor.chain().focus().toggleBold().run()}
-          className={editor.isActive('bold') ? 'bg-accent' : ''}
+          onClick={() => execCommand('bold')}
         >
           <Bold className="h-4 w-4" />
         </Button>
         
         <Button
+          type="button"
           variant="ghost"
           size="sm"
-          onClick={() => editor.chain().focus().toggleItalic().run()}
-          className={editor.isActive('italic') ? 'bg-accent' : ''}
+          onClick={() => execCommand('italic')}
         >
           <Italic className="h-4 w-4" />
         </Button>
 
         <Button
+          type="button"
           variant="ghost"
           size="sm"
-          onClick={() => editor.chain().focus().toggleUnderline().run()}
-          className={editor.isActive('underline') ? 'bg-accent' : ''}
+          onClick={() => execCommand('underline')}
         >
           <UnderlineIcon className="h-4 w-4" />
         </Button>
@@ -196,28 +93,28 @@ export const RichTextEditor = ({
         <div className="w-px h-6 bg-border mx-1" />
 
         <Button
+          type="button"
           variant="ghost"
           size="sm"
-          onClick={() => editor.chain().focus().setTextAlign('left').run()}
-          className={editor.isActive({ textAlign: 'left' }) ? 'bg-accent' : ''}
+          onClick={() => execCommand('justifyLeft')}
         >
           <AlignLeft className="h-4 w-4" />
         </Button>
 
         <Button
+          type="button"
           variant="ghost"
           size="sm"
-          onClick={() => editor.chain().focus().setTextAlign('center').run()}
-          className={editor.isActive({ textAlign: 'center' }) ? 'bg-accent' : ''}
+          onClick={() => execCommand('justifyCenter')}
         >
           <AlignCenter className="h-4 w-4" />
         </Button>
 
         <Button
+          type="button"
           variant="ghost"
           size="sm"
-          onClick={() => editor.chain().focus().setTextAlign('right').run()}
-          className={editor.isActive({ textAlign: 'right' }) ? 'bg-accent' : ''}
+          onClick={() => execCommand('justifyRight')}
         >
           <AlignRight className="h-4 w-4" />
         </Button>
@@ -225,19 +122,19 @@ export const RichTextEditor = ({
         <div className="w-px h-6 bg-border mx-1" />
 
         <Button
+          type="button"
           variant="ghost"
           size="sm"
-          onClick={() => editor.chain().focus().toggleBulletList().run()}
-          className={editor.isActive('bulletList') ? 'bg-accent' : ''}
+          onClick={() => execCommand('insertUnorderedList')}
         >
           <List className="h-4 w-4" />
         </Button>
 
         <Button
+          type="button"
           variant="ghost"
           size="sm"
-          onClick={() => editor.chain().focus().toggleOrderedList().run()}
-          className={editor.isActive('orderedList') ? 'bg-accent' : ''}
+          onClick={() => execCommand('insertOrderedList')}
         >
           <ListOrdered className="h-4 w-4" />
         </Button>
@@ -245,19 +142,35 @@ export const RichTextEditor = ({
         <div className="w-px h-6 bg-border mx-1" />
 
         <Button
+          type="button"
           variant="ghost"
           size="sm"
-          onClick={() => editor.chain().focus().toggleBlockquote().run()}
-          className={editor.isActive('blockquote') ? 'bg-accent' : ''}
+          onClick={() => {
+            const blockquote = document.createElement('blockquote');
+            blockquote.innerHTML = window.getSelection()?.toString() || 'Quote text';
+            blockquote.style.borderLeft = '4px solid #ccc';
+            blockquote.style.paddingLeft = '1rem';
+            blockquote.style.margin = '1rem 0';
+            document.execCommand('insertHTML', false, blockquote.outerHTML);
+            handleInput();
+          }}
         >
           <Quote className="h-4 w-4" />
         </Button>
 
         <Button
+          type="button"
           variant="ghost"
           size="sm"
-          onClick={() => editor.chain().focus().toggleCode().run()}
-          className={editor.isActive('code') ? 'bg-accent' : ''}
+          onClick={() => {
+            const code = document.createElement('code');
+            code.innerHTML = window.getSelection()?.toString() || 'code';
+            code.style.backgroundColor = '#f4f4f4';
+            code.style.padding = '2px 4px';
+            code.style.borderRadius = '3px';
+            document.execCommand('insertHTML', false, code.outerHTML);
+            handleInput();
+          }}
         >
           <Code className="h-4 w-4" />
         </Button>
@@ -265,26 +178,27 @@ export const RichTextEditor = ({
         <div className="w-px h-6 bg-border mx-1" />
 
         <Button
+          type="button"
           variant="ghost"
           size="sm"
           onClick={() => {
             const url = window.prompt('Enter URL:');
             if (url) {
-              editor.chain().focus().setLink({ href: url }).run();
+              execCommand('createLink', url);
             }
           }}
-          className={editor.isActive('link') ? 'bg-accent' : ''}
         >
           <LinkIcon className="h-4 w-4" />
         </Button>
 
         <Button
+          type="button"
           variant="ghost"
           size="sm"
           onClick={() => {
             const url = window.prompt('Enter image URL:');
             if (url) {
-              editor.chain().focus().setImage({ src: url }).run();
+              execCommand('insertImage', url);
             }
           }}
         >
@@ -293,13 +207,17 @@ export const RichTextEditor = ({
 
         <div className="ml-auto">
           <Button
+            type="button"
             variant="outline"
             size="sm"
             onClick={() => {
-              const html = editor.getHTML();
-              const newHtml = window.prompt('Edit HTML:', html);
-              if (newHtml !== null) {
-                editor.commands.setContent(newHtml);
+              if (editorRef.current) {
+                const html = editorRef.current.innerHTML;
+                const newHtml = window.prompt('Edit HTML:', html);
+                if (newHtml !== null) {
+                  editorRef.current.innerHTML = newHtml;
+                  handleInput();
+                }
               }
             }}
           >
@@ -313,12 +231,18 @@ export const RichTextEditor = ({
   return (
     <div className={`rich-text-editor border border-border rounded-lg overflow-hidden bg-background ${className}`}>
       <MenuBar />
-      <div className="min-h-[300px] p-4 bg-background border-t border-border">
-        <EditorContent 
-          editor={editor} 
-          className="w-full h-full text-foreground [&_.ProseMirror]:outline-none [&_.ProseMirror]:min-h-[250px] [&_.ProseMirror]:text-foreground"
-        />
-      </div>
+      <div 
+        ref={editorRef}
+        contentEditable
+        className="min-h-[300px] p-4 text-foreground focus:outline-none prose prose-sm max-w-none [&_details]:border [&_details]:border-border [&_details]:rounded [&_details]:p-2 [&_details]:my-2 [&_summary]:font-medium [&_summary]:cursor-pointer [&_summary]:mb-2 empty:before:content-[attr(data-placeholder)] empty:before:text-muted-foreground empty:before:pointer-events-none"
+        onInput={handleInput}
+        onPaste={handlePaste}
+        suppressContentEditableWarning={true}
+        data-placeholder={!value ? placeholder : undefined}
+        style={{
+          minHeight: '300px',
+        }}
+      />
       
       {/* Debug info */}
       {value && value.includes('<details') && (
