@@ -77,6 +77,7 @@ export const RichTextEditor = ({
         onUploadStart={handleImageUploadStart}
         courseId={courseId}
         courseDomain={courseDomain}
+        currentImage={selectedImage}
       />
     </div>
   );
