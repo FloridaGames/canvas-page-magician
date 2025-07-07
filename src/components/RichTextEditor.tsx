@@ -32,15 +32,58 @@ export const RichTextEditor = ({
       ['code-block'],
       ['clean']
     ],
+    clipboard: {
+      // Preserve all HTML content including custom elements
+      matchVisual: false,
+    }
   };
 
+  // Expanded formats to preserve more HTML elements
   const formats = [
     'header', 'font', 'size',
     'bold', 'italic', 'underline', 'strike', 'blockquote',
     'color', 'background',
     'list', 'bullet', 'indent', 'align',
-    'link', 'image', 'video', 'code-block'
+    'link', 'image', 'video', 'code-block',
+    'div', 'details', 'summary', 'style', 'class', 'id'
   ];
+
+  // Custom HTML handling to preserve Canvas-specific elements
+  useEffect(() => {
+    if (quillRef.current) {
+      const quill = quillRef.current.getEditor();
+      
+      // Override the clipboard module to preserve custom HTML
+      const originalConvert = quill.clipboard.convert;
+      quill.clipboard.convert = function(html: string) {
+        // Store original HTML if it contains details/summary elements
+        if (html.includes('<details') || html.includes('<summary')) {
+          // Return the HTML as-is for Canvas-specific elements
+          const delta = originalConvert.call(this, html);
+          return delta;
+        }
+        return originalConvert.call(this, html);
+      };
+
+      // Preserve HTML content on paste
+      quill.root.addEventListener('paste', (e) => {
+        e.preventDefault();
+        const clipboardData = e.clipboardData || (window as any).clipboardData;
+        const pastedData = clipboardData.getData('text/html') || clipboardData.getData('text/plain');
+        
+        if (pastedData.includes('<details') || pastedData.includes('<summary')) {
+          // Insert HTML directly for Canvas elements
+          const range = quill.getSelection();
+          if (range) {
+            quill.clipboard.dangerouslyPasteHTML(range.index, pastedData);
+          }
+        } else {
+          // Use normal paste handling
+          quill.clipboard.dangerouslyPasteHTML(pastedData);
+        }
+      });
+    }
+  }, []);
 
   // Custom styles for the editor
   useEffect(() => {
@@ -50,6 +93,19 @@ export const RichTextEditor = ({
         min-height: 300px;
         font-size: 14px;
         line-height: 1.6;
+      }
+      .ql-editor details {
+        border: 1px solid #C3C3C3;
+        margin: 0 0 10px 0;
+        background-color: #ffffff;
+      }
+      .ql-editor summary {
+        padding: 10px;
+        cursor: pointer;
+        font-weight: bold;
+      }
+      .ql-editor summary:hover {
+        background-color: #f5f5f5;
       }
       .ql-toolbar {
         border-top: 1px solid hsl(var(--border));
@@ -83,6 +139,7 @@ export const RichTextEditor = ({
         modules={modules}
         formats={formats}
         placeholder={placeholder}
+        preserveWhitespace={true}
       />
     </div>
   );

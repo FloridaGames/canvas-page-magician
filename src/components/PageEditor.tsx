@@ -4,7 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
-import { RichTextEditor } from "@/components/RichTextEditor";
+import { HybridEditor } from "@/components/HybridEditor";
 import { 
   Save, 
   ArrowLeft, 
@@ -234,37 +234,14 @@ export const PageEditor = ({ course, page, isNewPage, onBack }: PageEditorProps)
             <CardTitle>Page Content</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="space-y-3">
-              <Label>Edit your page content with live formatting</Label>
-              <RichTextEditor
-                value={body}
-                onChange={(value) => handleInputChange('body', value)}
-                placeholder="Start writing your page content... Use the toolbar above to format text, add links, images, and more."
-                className="min-h-[500px]"
-              />
-              <p className="text-sm text-muted-foreground">
-                Edit your content with live formatting. What you see is what students will see in Canvas.
-              </p>
-            </div>
+            <HybridEditor
+              value={body}
+              onChange={(value) => handleInputChange('body', value)}
+              placeholder="Start writing your page content... The editor will automatically preserve Canvas layouts and collapsible boxes."
+              className="w-full"
+            />
           </CardContent>
         </Card>
-
-        {body && (
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Eye className="h-5 w-5" />
-                Content Preview
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div 
-                className="prose max-w-none p-4 bg-editor-bg rounded-lg border"
-                dangerouslySetInnerHTML={{ __html: body }}
-              />
-            </CardContent>
-          </Card>
-        )}
       </div>
     </div>
   );
