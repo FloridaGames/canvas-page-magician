@@ -1,5 +1,6 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Editor } from '@tinymce/tinymce-react';
+import { supabase } from '@/integrations/supabase/client';
 
 interface RichTextEditorProps {
   value: string;
@@ -15,6 +16,33 @@ export const RichTextEditor = ({
   className = ""
 }: RichTextEditorProps) => {
   const editorRef = useRef<any>(null);
+  const [apiKey, setApiKey] = useState<string>('no-api-key');
+  const [isLoading, setIsLoading] = useState(true);
+
+  // Fetch TinyMCE API key from Supabase
+  useEffect(() => {
+    const fetchApiKey = async () => {
+      try {
+        const { data, error } = await supabase.functions.invoke('get-tinymce-key');
+        
+        if (error) {
+          console.error('Error fetching TinyMCE API key:', error);
+          setIsLoading(false);
+          return;
+        }
+
+        if (data?.apiKey) {
+          setApiKey(data.apiKey);
+        }
+      } catch (error) {
+        console.error('Error fetching TinyMCE API key:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchApiKey();
+  }, []);
 
   // TinyMCE configuration optimized for Canvas LMS HTML
   const editorConfig = {
@@ -82,14 +110,24 @@ export const RichTextEditor = ({
         }
       });
     },
-    // Use API key from environment
-    apiKey: 'no-api-key' // Will be replaced with actual key
+    // Use API key from Supabase secrets  
+    apiKey: apiKey
   };
+
+  if (isLoading) {
+    return (
+      <div className={`rich-text-editor ${className}`}>
+        <div className="min-h-[500px] border border-border rounded-md flex items-center justify-center">
+          <div className="text-muted-foreground">Loading editor...</div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className={`rich-text-editor ${className}`}>
       <Editor
-        apiKey="no-api-key"
+        apiKey={apiKey}
         onInit={(evt, editor) => editorRef.current = editor}
         value={value}
         onEditorChange={(content) => onChange(content)}
