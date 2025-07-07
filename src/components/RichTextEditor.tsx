@@ -6,6 +6,7 @@ import Color from '@tiptap/extension-color';
 import Link from '@tiptap/extension-link';
 import Image from '@tiptap/extension-image';
 import Underline from '@tiptap/extension-underline';
+import Placeholder from '@tiptap/extension-placeholder';
 import { Node } from '@tiptap/core';
 import { Button } from '@/components/ui/button';
 import { 
@@ -125,6 +126,9 @@ export const RichTextEditor = ({
     extensions: [
       StarterKit,
       Underline,
+      Placeholder.configure({
+        placeholder,
+      }),
       TextAlign.configure({
         types: ['heading', 'paragraph'],
       }),
@@ -137,13 +141,13 @@ export const RichTextEditor = ({
       Details,
       Summary,
     ],
-    content: value,
+    content: value || '<p></p>',
     onUpdate: ({ editor }) => {
       onChange(editor.getHTML());
     },
     editorProps: {
       attributes: {
-        class: 'prose prose-sm sm:prose lg:prose-lg xl:prose-2xl mx-auto focus:outline-none min-h-[300px] p-4',
+        class: 'prose prose-sm max-w-none focus:outline-none min-h-[300px] p-4 [&_p]:my-0 [&_p]:leading-normal',
       },
     },
   });
