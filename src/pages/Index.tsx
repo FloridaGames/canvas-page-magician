@@ -3,7 +3,6 @@ import { CourseInput } from "@/components/CourseInput";
 import { PagesList } from "@/components/PagesList";
 import { PageEditor } from "@/components/PageEditor";
 import { Header } from "@/components/Header";
-import { ImageUploadDemo } from "@/components/ImageUploadDemo";
 
 export type AppState = "input" | "pages" | "editor";
 

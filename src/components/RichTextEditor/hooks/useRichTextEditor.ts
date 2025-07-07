@@ -6,15 +6,13 @@ interface UseRichTextEditorProps {
   inline: boolean;
   courseId?: string;
   courseDomain?: string;
-  onPendingUploadsChange?: (hasPending: boolean) => void;
 }
 
-export const useRichTextEditor = ({ value, onChange, inline, courseId, courseDomain, onPendingUploadsChange }: UseRichTextEditorProps) => {
+export const useRichTextEditor = ({ value, onChange, inline, courseId, courseDomain }: UseRichTextEditorProps) => {
   const editorRef = useRef<HTMLDivElement>(null);
   const [showToolbar, setShowToolbar] = useState(!inline);
   const [selectedImage, setSelectedImage] = useState<HTMLImageElement | null>(null);
   const [showImageUploader, setShowImageUploader] = useState(false);
-  const [pendingUploads, setPendingUploads] = useState(0);
 
   // Update editor content when value changes
   useEffect(() => {
@@ -108,19 +106,10 @@ export const useRichTextEditor = ({ value, onChange, inline, courseId, courseDom
   }, [selectedImage]);
 
   // Handle image replacement
-  const handleImageUploaded = useCallback((newImageUrl: string, fileId: string, fileName: string, apiEndpoint?: string) => {
-    // Always decrement pending uploads counter, even on error
-    setPendingUploads(prev => Math.max(0, prev - 1));
-    
-    // If empty values are passed, it indicates an error - just return after decrementing
-    if (!newImageUrl || !fileId || !fileName) {
-      return;
-    }
-    
+  const handleImageUploaded = useCallback((newImageUrl: string, fileId: string, fileName: string) => {
     if (selectedImage && editorRef.current) {
-      // Create the Canvas-specific HTML structure with grid-row wrapper
-      // This matches the Canvas LMS structure for proper display
-      const canvasImageHtml = `<div class="grid-row" style="padding: 0%;"><img id="${fileId}" src="${newImageUrl}" alt="${fileName}" width="100%" data-api-endpoint="${apiEndpoint || `https://${courseDomain}/api/v1/courses/${courseId}/files/${fileId}`}" data-api-returntype="File" /></div>`;
+      // Create the Canvas-specific HTML structure
+      const canvasImageHtml = `<div class="grid-row" style="padding: 0%;"><img id="${fileId}" src="${newImageUrl}" alt="${fileName}" width="100%" /></div>`;
       
       // Replace the selected image with the new Canvas structure
       const tempDiv = document.createElement('div');
@@ -135,12 +124,7 @@ export const useRichTextEditor = ({ value, onChange, inline, courseId, courseDom
       // Trigger input event to update the content
       handleInput();
     }
-  }, [selectedImage, handleInput, courseId, courseDomain]);
-
-  // Handle image upload start
-  const handleImageUploadStart = useCallback(() => {
-    setPendingUploads(prev => prev + 1);
-  }, []);
+  }, [selectedImage, handleInput]);
 
   // Add image click listener
   useEffect(() => {
@@ -169,24 +153,17 @@ export const useRichTextEditor = ({ value, onChange, inline, courseId, courseDom
     };
   }, [handleDocumentClick]);
 
-  // Notify parent about pending uploads
-  useEffect(() => {
-    onPendingUploadsChange?.(pendingUploads > 0);
-  }, [pendingUploads, onPendingUploadsChange]);
-
   return {
     editorRef,
     showToolbar,
     selectedImage,
     showImageUploader,
-    pendingUploads,
     handleInput,
     handleFocus,
     handleBlur,
     handleSelection,
     handlePaste,
     handleImageUploaded,
-    handleImageUploadStart,
     setShowImageUploader,
   };
 };

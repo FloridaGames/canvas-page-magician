@@ -10,7 +10,6 @@ interface RichTextEditorProps {
   inline?: boolean;
   courseId?: string;
   courseDomain?: string;
-  onPendingUploadsChange?: (hasPending: boolean) => void;
 }
 
 export const RichTextEditor = ({ 
@@ -20,24 +19,21 @@ export const RichTextEditor = ({
   className = "",
   inline = false,
   courseId,
-  courseDomain,
-  onPendingUploadsChange
+  courseDomain
 }: RichTextEditorProps) => {
   const {
     editorRef,
     showToolbar,
     selectedImage,
     showImageUploader,
-    pendingUploads,
     handleInput,
     handleFocus,
     handleBlur,
     handleSelection,
     handlePaste,
     handleImageUploaded,
-    handleImageUploadStart,
     setShowImageUploader,
-  } = useRichTextEditor({ value, onChange, inline, courseId, courseDomain, onPendingUploadsChange });
+  } = useRichTextEditor({ value, onChange, inline, courseId, courseDomain });
 
   return (
     <div className={`rich-text-editor ${inline ? 'relative' : 'border border-border rounded-lg overflow-hidden bg-background'} ${className}`}>
@@ -74,10 +70,8 @@ export const RichTextEditor = ({
         isOpen={showImageUploader}
         onClose={() => setShowImageUploader(false)}
         onImageUploaded={handleImageUploaded}
-        onUploadStart={handleImageUploadStart}
         courseId={courseId}
         courseDomain={courseDomain}
-        currentImage={selectedImage}
       />
     </div>
   );

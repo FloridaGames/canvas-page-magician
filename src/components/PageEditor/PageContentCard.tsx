@@ -8,12 +8,10 @@ interface PageContentCardProps {
   isNewPage: boolean;
   isSaving: boolean;
   hasChanges: boolean;
-  hasPendingUploads: boolean;
   courseId: string;
   courseDomain?: string;
   onInputChange: (field: string, value: string) => void;
   onSave: () => void;
-  onPendingUploadsChange: (hasPending: boolean) => void;
 }
 
 export const PageContentCard = ({
@@ -21,14 +19,11 @@ export const PageContentCard = ({
   isNewPage,
   isSaving,
   hasChanges,
-  hasPendingUploads,
   courseId,
   courseDomain,
   onInputChange,
   onSave,
-  onPendingUploadsChange,
 }: PageContentCardProps) => {
-  const isDisabled = isSaving || !hasChanges || hasPendingUploads;
   return (
     <Card>
       <CardHeader>
@@ -36,18 +31,13 @@ export const PageContentCard = ({
           <CardTitle>Page Content</CardTitle>
           <Button 
             onClick={onSave} 
-            disabled={isDisabled}
+            disabled={isSaving || !hasChanges}
             size="sm"
           >
             {isSaving ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 Saving...
-              </>
-            ) : hasPendingUploads ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Uploading images...
               </>
             ) : (
               <>
@@ -66,7 +56,6 @@ export const PageContentCard = ({
           className="w-full"
           courseId={courseId}
           courseDomain={courseDomain}
-          onPendingUploadsChange={onPendingUploadsChange}
         />
       </CardContent>
     </Card>

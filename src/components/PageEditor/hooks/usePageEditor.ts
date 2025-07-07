@@ -17,7 +17,6 @@ export const usePageEditor = ({ course, page, isNewPage, onBack }: UsePageEditor
   const [published, setPublished] = useState(false);
   const [isSaving, setSaving] = useState(false);
   const [hasChanges, setHasChanges] = useState(false);
-  const [hasPendingUploads, setHasPendingUploads] = useState(false);
 
   useEffect(() => {
     if (page) {
@@ -39,15 +38,6 @@ export const usePageEditor = ({ course, page, isNewPage, onBack }: UsePageEditor
         title: "Validation Error",
         description: "Page title is required",
         variant: "destructive",
-      });
-      return;
-    }
-
-    if (hasPendingUploads) {
-      toast({
-        title: "Please Wait",
-        description: "Please wait for image uploads to complete before saving",
-        variant: "default",
       });
       return;
     }
@@ -150,21 +140,15 @@ export const usePageEditor = ({ course, page, isNewPage, onBack }: UsePageEditor
     }
   };
 
-  const handlePendingUploadsChange = (hasPending: boolean) => {
-    setHasPendingUploads(hasPending);
-  };
-
   return {
     title,
     body,
     published,
     isSaving,
     hasChanges,
-    hasPendingUploads,
     handleSave,
     handleInputChange,
     getPageTitle,
     getCourseDomain,
-    handlePendingUploadsChange,
   };
 };
