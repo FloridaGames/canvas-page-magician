@@ -1,11 +1,14 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Upload, Loader2, X } from 'lucide-react';
+import { Progress } from '@/components/ui/progress';
+import { Upload, Loader2, X, Crop, RotateCw } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
+import Cropper from 'cropperjs';
+import 'cropperjs/dist/cropper.css';
 
 interface ImageUploaderProps {
   isOpen: boolean;
@@ -36,7 +39,30 @@ export const ImageUploader = ({
     apiEndpoint: string;
   } | null>(null);
   const [showConfirmation, setShowConfirmation] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [uploadStatus, setUploadStatus] = useState<string>('');
+  const [showCropper, setShowCropper] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const cropperRef = useRef<HTMLImageElement>(null);
+  const cropperInstanceRef = useRef<Cropper | null>(null);
+
+  // Initialize cropper when image is loaded
+  useEffect(() => {
+    if (showCropper && cropperRef.current && previewUrl) {
+      if (cropperInstanceRef.current) {
+        (cropperInstanceRef.current as any).destroy();
+      }
+      
+      cropperInstanceRef.current = new Cropper(cropperRef.current, {} as any);
+    }
+
+    return () => {
+      if (cropperInstanceRef.current) {
+        (cropperInstanceRef.current as any).destroy();
+        cropperInstanceRef.current = null;
+      }
+    };
+  }, [showCropper, previewUrl]);
 
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -67,16 +93,29 @@ export const ImageUploader = ({
       const reader = new FileReader();
       reader.onload = (e) => {
         setPreviewUrl(e.target?.result as string);
+        setShowCropper(true);
       };
       reader.readAsDataURL(file);
     }
   };
 
+  const resetCropper = () => {
+    if (cropperInstanceRef.current) {
+      (cropperInstanceRef.current as any).reset();
+    }
+  };
+
+  const rotateCropper = () => {
+    if (cropperInstanceRef.current) {
+      (cropperInstanceRef.current as any).rotate(90);
+    }
+  };
+
   const handleUpload = async () => {
-    if (!selectedFile || !courseId || !courseDomain) {
+    if (!selectedFile || !courseId || !courseDomain || !cropperInstanceRef.current) {
       toast({
         title: "Upload Error",
-        description: "Missing required information for upload",
+        description: "Missing required information for upload or cropper not initialized",
         variant: "destructive",
       });
       return;
@@ -85,14 +124,40 @@ export const ImageUploader = ({
     // Notify parent that upload is starting
     onUploadStart?.();
     setIsUploading(true);
+    setUploadProgress(0);
 
     try {
-      // Convert file to base64
+      // Get cropped canvas
+      setUploadStatus('Preparing image...');
+      setUploadProgress(10);
+      
+      const croppedCanvas = (cropperInstanceRef.current as any).getCroppedCanvas({
+        maxWidth: 1920,
+        maxHeight: 1920,
+        imageSmoothingEnabled: true,
+        imageSmoothingQuality: 'high',
+      });
+
+      // Convert canvas to blob
+      const blob = await new Promise<Blob>((resolve, reject) => {
+        croppedCanvas.toBlob((blob) => {
+          if (blob) resolve(blob);
+          else reject(new Error('Failed to create blob from canvas'));
+        }, 'image/jpeg', 0.9);
+      });
+
+      setUploadProgress(25);
+      setUploadStatus('Converting image...');
+
+      // Convert blob to base64
       const base64 = await new Promise<string>((resolve) => {
         const reader = new FileReader();
         reader.onload = () => resolve(reader.result as string);
-        reader.readAsDataURL(selectedFile);
+        reader.readAsDataURL(blob);
       });
+
+      setUploadProgress(50);
+      setUploadStatus('Uploading to Canvas...');
 
       // Upload to Canvas
       const { data, error } = await supabase.functions.invoke('canvas-image-upload', {
@@ -101,7 +166,7 @@ export const ImageUploader = ({
           courseId: courseId,
           imageFile: base64,
           fileName: selectedFile.name,
-          mimeType: selectedFile.type,
+          mimeType: 'image/jpeg',
         },
       });
 
@@ -113,9 +178,12 @@ export const ImageUploader = ({
         throw new Error(data.error);
       }
 
+      setUploadProgress(100);
+      setUploadStatus('Upload complete!');
+
       toast({
         title: "Success",
-        description: "Image uploaded successfully",
+        description: "Image uploaded and processed successfully",
       });
 
       // Store upload data and show confirmation
@@ -139,6 +207,8 @@ export const ImageUploader = ({
       onImageUploaded('', '', '', '');
     } finally {
       setIsUploading(false);
+      setUploadProgress(0);
+      setUploadStatus('');
     }
   };
 
@@ -161,10 +231,17 @@ export const ImageUploader = ({
   };
 
   const handleClose = () => {
+    if (cropperInstanceRef.current) {
+      (cropperInstanceRef.current as any).destroy();
+      cropperInstanceRef.current = null;
+    }
     setSelectedFile(null);
     setPreviewUrl('');
     setUploadedData(null);
     setShowConfirmation(false);
+    setShowCropper(false);
+    setUploadProgress(0);
+    setUploadStatus('');
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
@@ -248,7 +325,7 @@ export const ImageUploader = ({
             </div>
           </div>
         ) : (
-          <div className="space-y-4">
+          <div className="space-y-6">
             {/* Show current image info at the top */}
             {currentImageInfo && (
               <div className="space-y-2">
@@ -267,8 +344,14 @@ export const ImageUploader = ({
               </div>
             )}
 
+            {/* Step 1: File Selection */}
             <div className="space-y-2">
-              <Label htmlFor="image-upload">Select Image</Label>
+              <div className="flex items-center gap-2">
+                <div className="w-6 h-6 rounded-full bg-primary text-primary-foreground text-sm flex items-center justify-center font-medium">
+                  1
+                </div>
+                <Label htmlFor="image-upload">Select Image</Label>
+              </div>
               <Input
                 ref={fileInputRef}
                 id="image-upload"
@@ -282,43 +365,70 @@ export const ImageUploader = ({
               </p>
             </div>
 
-            {previewUrl && (
-              <div className="space-y-2">
-                <Label>Preview</Label>
-                <div className="relative">
-                  <img
-                    src={previewUrl}
-                    alt="Preview"
-                    className="w-full h-48 object-cover rounded border"
-                  />
-                  <Button
-                    variant="destructive"
-                    size="sm"
-                    className="absolute top-2 right-2"
-                    onClick={() => {
-                      setSelectedFile(null);
-                      setPreviewUrl('');
-                      if (fileInputRef.current) {
-                        fileInputRef.current.value = '';
-                      }
-                    }}
-                  >
-                    <X className="h-4 w-4" />
+            {/* Step 2: Crop Image */}
+            {showCropper && previewUrl && (
+              <div className="space-y-4">
+                <div className="flex items-center gap-2">
+                  <div className="w-6 h-6 rounded-full bg-primary text-primary-foreground text-sm flex items-center justify-center font-medium">
+                    2
+                  </div>
+                  <Label>Crop & Adjust Image</Label>
+                </div>
+                
+                <div className="border rounded-lg overflow-hidden bg-muted/20">
+                  <div style={{ maxHeight: '400px', overflow: 'hidden' }}>
+                    <img
+                      ref={cropperRef}
+                      src={previewUrl}
+                      alt="Image to crop"
+                      style={{ maxWidth: '100%', height: 'auto' }}
+                    />
+                  </div>
+                </div>
+
+                <div className="flex gap-2 justify-center">
+                  <Button variant="outline" size="sm" onClick={resetCropper}>
+                    <Crop className="h-4 w-4 mr-2" />
+                    Reset
+                  </Button>
+                  <Button variant="outline" size="sm" onClick={rotateCropper}>
+                    <RotateCw className="h-4 w-4 mr-2" />
+                    Rotate
                   </Button>
                 </div>
-                <div className="text-xs text-muted-foreground">
+
+                <div className="text-xs text-muted-foreground text-center">
                   File: {selectedFile?.name} ({selectedFile ? Math.round(selectedFile.size / 1024) : 0} KB)
                 </div>
               </div>
             )}
 
-            <div className="flex gap-2 justify-end">
+            {/* Upload Progress */}
+            {isUploading && (
+              <div className="space-y-3">
+                <div className="flex items-center gap-2">
+                  <div className="w-6 h-6 rounded-full bg-primary text-primary-foreground text-sm flex items-center justify-center font-medium">
+                    3
+                  </div>
+                  <Label>Upload Progress</Label>
+                </div>
+                <div className="space-y-2">
+                  <Progress value={uploadProgress} className="h-2" />
+                  <p className="text-sm text-muted-foreground text-center">
+                    {uploadStatus}
+                  </p>
+                </div>
+              </div>
+            )}
+
+            <div className="flex gap-2 justify-end pt-4 border-t">
               <Button variant="outline" onClick={handleClose} disabled={isUploading}>
                 Cancel
               </Button>
               <Button 
                 onClick={handleUpload} 
-                disabled={!selectedFile || isUploading}
+                disabled={!showCropper || isUploading}
+                className="min-w-[140px]"
               >
                 {isUploading ? (
                   <>
