@@ -11,6 +11,7 @@ interface ImageUploaderProps {
   isOpen: boolean;
   onClose: () => void;
   onImageUploaded: (imageUrl: string, fileId: string, fileName: string) => void;
+  onUploadStart?: () => void;
   courseId?: string;
   courseDomain?: string;
 }
@@ -19,6 +20,7 @@ export const ImageUploader = ({
   isOpen,
   onClose,
   onImageUploaded,
+  onUploadStart,
   courseId,
   courseDomain,
 }: ImageUploaderProps) => {
@@ -71,6 +73,8 @@ export const ImageUploader = ({
       return;
     }
 
+    // Notify parent that upload is starting
+    onUploadStart?.();
     setIsUploading(true);
 
     try {
@@ -105,7 +109,7 @@ export const ImageUploader = ({
         description: "Image uploaded successfully",
       });
 
-      onImageUploaded(data.url, data.fileId, data.fileName);
+      onImageUploaded(data.previewUrl, data.fileId, data.fileName);
       handleClose();
 
     } catch (error) {

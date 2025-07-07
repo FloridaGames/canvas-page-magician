@@ -6,13 +6,15 @@ interface UseRichTextEditorProps {
   inline: boolean;
   courseId?: string;
   courseDomain?: string;
+  onPendingUploadsChange?: (hasPending: boolean) => void;
 }
 
-export const useRichTextEditor = ({ value, onChange, inline, courseId, courseDomain }: UseRichTextEditorProps) => {
+export const useRichTextEditor = ({ value, onChange, inline, courseId, courseDomain, onPendingUploadsChange }: UseRichTextEditorProps) => {
   const editorRef = useRef<HTMLDivElement>(null);
   const [showToolbar, setShowToolbar] = useState(!inline);
   const [selectedImage, setSelectedImage] = useState<HTMLImageElement | null>(null);
   const [showImageUploader, setShowImageUploader] = useState(false);
+  const [pendingUploads, setPendingUploads] = useState(0);
 
   // Update editor content when value changes
   useEffect(() => {
@@ -108,8 +110,11 @@ export const useRichTextEditor = ({ value, onChange, inline, courseId, courseDom
   // Handle image replacement
   const handleImageUploaded = useCallback((newImageUrl: string, fileId: string, fileName: string) => {
     if (selectedImage && editorRef.current) {
-      // Create the Canvas-specific HTML structure with full URL
-      const canvasImageHtml = `<div class="grid-row" style="padding: 0%;"><img id="${fileId}" src="${newImageUrl}" alt="${fileName}" width="100%" /></div>`;
+      // Use Canvas preview URL format for proper display in Canvas content
+      const canvasPreviewUrl = newImageUrl.includes('/preview') ? newImageUrl : `/courses/${courseId}/files/${fileId}/preview`;
+      
+      // Create the Canvas-specific HTML structure with preview URL
+      const canvasImageHtml = `<img id="${fileId}" src="${canvasPreviewUrl}" alt="${fileName}" data-api-endpoint="https://${courseDomain}/api/v1/courses/${courseId}/files/${fileId}" data-api-returntype="File" />`;
       
       // Replace the selected image with the new Canvas structure
       const tempDiv = document.createElement('div');
@@ -121,10 +126,18 @@ export const useRichTextEditor = ({ value, onChange, inline, courseId, courseDom
       // Clear selection
       setSelectedImage(null);
       
+      // Decrement pending uploads
+      setPendingUploads(prev => Math.max(0, prev - 1));
+      
       // Trigger input event to update the content
       handleInput();
     }
-  }, [selectedImage, handleInput]);
+  }, [selectedImage, handleInput, courseId, courseDomain]);
+
+  // Handle image upload start
+  const handleImageUploadStart = useCallback(() => {
+    setPendingUploads(prev => prev + 1);
+  }, []);
 
   // Add image click listener
   useEffect(() => {
@@ -153,17 +166,24 @@ export const useRichTextEditor = ({ value, onChange, inline, courseId, courseDom
     };
   }, [handleDocumentClick]);
 
+  // Notify parent about pending uploads
+  useEffect(() => {
+    onPendingUploadsChange?.(pendingUploads > 0);
+  }, [pendingUploads, onPendingUploadsChange]);
+
   return {
     editorRef,
     showToolbar,
     selectedImage,
     showImageUploader,
+    pendingUploads,
     handleInput,
     handleFocus,
     handleBlur,
     handleSelection,
     handlePaste,
     handleImageUploaded,
+    handleImageUploadStart,
     setShowImageUploader,
   };
 };

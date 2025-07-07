@@ -9,6 +9,7 @@ interface HybridEditorProps {
   inline?: boolean;
   courseId?: string;
   courseDomain?: string;
+  onPendingUploadsChange?: (hasPending: boolean) => void;
 }
 
 export const HybridEditor = ({ 
@@ -18,7 +19,8 @@ export const HybridEditor = ({
   className = "",
   inline = false,
   courseId,
-  courseDomain
+  courseDomain,
+  onPendingUploadsChange
 }: HybridEditorProps) => {
 
   if (inline) {
@@ -31,6 +33,7 @@ export const HybridEditor = ({
         inline={true}
         courseId={courseId}
         courseDomain={courseDomain}
+        onPendingUploadsChange={onPendingUploadsChange}
       />
     );
   }
@@ -54,6 +57,7 @@ export const HybridEditor = ({
         inline={false}
         courseId={courseId}
         courseDomain={courseDomain}
+        onPendingUploadsChange={onPendingUploadsChange}
       />
     </div>
   );
