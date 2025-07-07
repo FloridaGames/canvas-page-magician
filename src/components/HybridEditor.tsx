@@ -6,14 +6,28 @@ interface HybridEditorProps {
   onChange: (value: string) => void;
   placeholder?: string;
   className?: string;
+  inline?: boolean; // Add inline prop
 }
 
 export const HybridEditor = ({ 
   value, 
   onChange, 
   placeholder = "Start writing your content...",
-  className = ""
+  className = "",
+  inline = false
 }: HybridEditorProps) => {
+
+  if (inline) {
+    return (
+      <RichTextEditor
+        value={value}
+        onChange={onChange}
+        placeholder={placeholder}
+        className={className}
+        inline={true}
+      />
+    );
+  }
 
   return (
     <div className={`hybrid-editor ${className}`}>
@@ -22,7 +36,7 @@ export const HybridEditor = ({
           Visual Editor
         </Label>
         <p className="text-sm text-muted-foreground mt-1">
-          ReactQuill editor with Canvas LMS preservation - details/summary elements are protected during editing
+          ContentEditable editor with Canvas LMS preservation - details/summary elements are protected during editing
         </p>
       </div>
 
@@ -31,6 +45,7 @@ export const HybridEditor = ({
         onChange={onChange}
         placeholder={placeholder}
         className="min-h-[500px]"
+        inline={false}
       />
     </div>
   );
