@@ -22,7 +22,7 @@ export const HybridEditor = ({
           Visual Editor
         </Label>
         <p className="text-sm text-muted-foreground mt-1">
-          TinyMCE editor with full Canvas LMS support - edit inline with live preview
+          CKEditor 5 with full Canvas LMS support - edit inline with live preview
         </p>
       </div>
 
