@@ -10,7 +10,7 @@ interface RichTextEditorProps {
   className?: string;
 }
 
-// Custom Quill module to handle Canvas LMS elements using Parchment
+// Custom Quill module to handle Canvas LMS elements using proper Parchment implementation  
 let isQuillCustomized = false;
 
 const customizeQuill = () => {
@@ -34,17 +34,15 @@ const customizeQuill = () => {
         return node;
       }
       
-      static formats(node: HTMLElement) {
-        return node.hasAttribute('open') ? { open: true } : true;
+      static formats(domNode: HTMLElement) {
+        return domNode.hasAttribute('open') ? { open: true } : {};
       }
       
       format(name: string, value: any) {
-        if (name === 'details' && value) {
+        if (name === 'details') {
           const domNode = this.domNode as HTMLElement;
-          if (typeof value === 'object' && value.open) {
+          if (value && typeof value === 'object' && value.open) {
             domNode.setAttribute('open', '');
-          } else if (value === true) {
-            // Keep existing state if just applying format
           } else {
             domNode.removeAttribute('open');
           }
@@ -54,29 +52,33 @@ const customizeQuill = () => {
       }
     }
     
-    // Summary blot - header/title for details element
+    // Summary blot - header for details element  
     class SummaryBlot extends Block {
       static blotName = 'summary';
-      static tagName = 'summary';
+      static tagName = 'summary'; 
       static scope = Parchment.Scope.BLOCK_BLOT;
       
-      static create() {
-        return super.create();
+      static create(value?: any) {
+        const node = super.create();
+        return node;
       }
       
-      static formats() {
-        return true;
+      static formats(domNode: HTMLElement) {
+        return {};
       }
     }
     
-    // Register the blots with Quill using the proper path syntax
-    Quill.register('formats/details', DetailsBlot, true);
-    Quill.register('formats/summary', SummaryBlot, true);
+    // Register the blots with Quill using proper registration
+    Quill.register({
+      'formats/details': DetailsBlot,
+      'formats/summary': SummaryBlot,
+    }, true);
     
     isQuillCustomized = true;
-    console.log('Details and Summary blots registered with Quill using Parchment');
+    console.log('✅ Details and Summary blots registered with proper Parchment implementation');
   } catch (error) {
-    console.warn('Failed to register Details/Summary blots:', error);
+    console.warn('❌ Failed to register Details/Summary blots:', error);
+    console.error(error);
   }
 };
 
