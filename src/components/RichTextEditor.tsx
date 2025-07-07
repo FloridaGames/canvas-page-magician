@@ -10,72 +10,112 @@ interface RichTextEditorProps {
   className?: string;
 }
 
-// Custom Quill module to handle Canvas LMS elements using proper Parchment implementation  
+// Custom Quill module to handle Canvas LMS elements with HTML preservation
 let isQuillCustomized = false;
 
 const customizeQuill = () => {
   if (isQuillCustomized) return;
   
   try {
-    const Block = Quill.import('blots/block') as any;
+    const BlockEmbed = Quill.import('blots/block/embed') as any;
     const Parchment = Quill.import('parchment') as any;
     
-    // Details blot - block-level collapsible container
-    class DetailsBlot extends Block {
+    // Details blot - preserves complete HTML structure
+    class DetailsBlot extends BlockEmbed {
       static blotName = 'details';
       static tagName = 'details';
       static scope = Parchment.Scope.BLOCK_BLOT;
       
       static create(value?: any) {
         const node = super.create();
-        if (value && typeof value === 'object' && value.open) {
-          node.setAttribute('open', '');
+        
+        if (value && typeof value === 'object') {
+          // Set attributes from the value object
+          if (value.style) {
+            node.setAttribute('style', value.style);
+          }
+          if (value.open) {
+            node.setAttribute('open', '');
+          }
+          if (value.innerHTML) {
+            node.innerHTML = value.innerHTML;
+          }
+        } else if (typeof value === 'string') {
+          // Handle raw HTML string
+          node.outerHTML = value;
+          return node;
         }
+        
         return node;
       }
       
-      static formats(domNode: HTMLElement) {
-        return domNode.hasAttribute('open') ? { open: true } : {};
+      static value(domNode: HTMLElement) {
+        return {
+          style: domNode.getAttribute('style') || '',
+          open: domNode.hasAttribute('open'),
+          innerHTML: domNode.innerHTML,
+          outerHTML: domNode.outerHTML
+        };
       }
       
-      format(name: string, value: any) {
-        if (name === 'details') {
-          const domNode = this.domNode as HTMLElement;
-          if (value && typeof value === 'object' && value.open) {
-            domNode.setAttribute('open', '');
-          } else {
-            domNode.removeAttribute('open');
-          }
-        } else {
-          super.format(name, value);
-        }
+      static formats(domNode: HTMLElement) {
+        return {
+          style: domNode.getAttribute('style') || '',
+          open: domNode.hasAttribute('open'),
+          innerHTML: domNode.innerHTML
+        };
       }
     }
     
-    // Summary blot - header for details element  
-    class SummaryBlot extends Block {
+    // Summary blot - preserves complete HTML structure
+    class SummaryBlot extends BlockEmbed {
       static blotName = 'summary';
-      static tagName = 'summary'; 
+      static tagName = 'summary';
       static scope = Parchment.Scope.BLOCK_BLOT;
       
       static create(value?: any) {
         const node = super.create();
+        
+        if (value && typeof value === 'object') {
+          if (value.style) {
+            node.setAttribute('style', value.style);
+          }
+          if (value.innerHTML) {
+            node.innerHTML = value.innerHTML;
+          }
+        } else if (typeof value === 'string') {
+          // Handle raw HTML string
+          node.outerHTML = value;
+          return node;
+        }
+        
         return node;
       }
       
+      static value(domNode: HTMLElement) {
+        return {
+          style: domNode.getAttribute('style') || '',
+          innerHTML: domNode.innerHTML,
+          outerHTML: domNode.outerHTML
+        };
+      }
+      
       static formats(domNode: HTMLElement) {
-        return {};
+        return {
+          style: domNode.getAttribute('style') || '',
+          innerHTML: domNode.innerHTML
+        };
       }
     }
     
-    // Register the blots with Quill using proper registration
+    // Register the blots with Quill
     Quill.register({
       'formats/details': DetailsBlot,
       'formats/summary': SummaryBlot,
     }, true);
     
     isQuillCustomized = true;
-    console.log('✅ Details and Summary blots registered with proper Parchment implementation');
+    console.log('✅ Details and Summary blots registered with HTML preservation');
   } catch (error) {
     console.warn('❌ Failed to register Details/Summary blots:', error);
     console.error(error);
