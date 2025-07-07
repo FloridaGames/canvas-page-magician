@@ -118,9 +118,9 @@ export const useRichTextEditor = ({ value, onChange, inline, courseId, courseDom
     }
     
     if (selectedImage && editorRef.current) {
-      // Create the Canvas-specific HTML structure using the direct URL from Canvas
-      // This matches the Python code structure for proper Canvas display
-      const canvasImageHtml = `<img id="${fileId}" src="${newImageUrl}" alt="${fileName}" width="100%" data-api-endpoint="${apiEndpoint || `https://${courseDomain}/api/v1/courses/${courseId}/files/${fileId}`}" data-api-returntype="File" />`;
+      // Create the Canvas-specific HTML structure with grid-row wrapper
+      // This matches the Canvas LMS structure for proper display
+      const canvasImageHtml = `<div class="grid-row" style="padding: 0%;"><img id="${fileId}" src="${newImageUrl}" alt="${fileName}" width="100%" data-api-endpoint="${apiEndpoint || `https://${courseDomain}/api/v1/courses/${courseId}/files/${fileId}`}" data-api-returntype="File" /></div>`;
       
       // Replace the selected image with the new Canvas structure
       const tempDiv = document.createElement('div');
