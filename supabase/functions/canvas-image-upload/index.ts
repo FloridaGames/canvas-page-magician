@@ -65,7 +65,7 @@ serve(async (req) => {
         name: fileName,
         size: bytes.length,
         content_type: mimeType,
-        parent_folder_path: '/course files/images',
+        parent_folder_path: '/Uploaded Media',
       }),
     });
 
