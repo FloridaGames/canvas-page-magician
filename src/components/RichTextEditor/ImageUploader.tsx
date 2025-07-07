@@ -4,10 +4,9 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Progress } from '@/components/ui/progress';
-import { Upload, Loader2, X, Crop, RotateCw } from 'lucide-react';
+import { Upload, Loader2, X, Crop, RotateCw, Move } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
-import Cropper from 'cropperjs';
 
 interface ImageUploaderProps {
   isOpen: boolean;
@@ -41,27 +40,68 @@ export const ImageUploader = ({
   const [uploadProgress, setUploadProgress] = useState(0);
   const [uploadStatus, setUploadStatus] = useState<string>('');
   const [showCropper, setShowCropper] = useState(false);
+  const [cropArea, setCropArea] = useState({ x: 0, y: 0, width: 200, height: 200 });
+  const [imageScale, setImageScale] = useState(1);
+  const [imageRotation, setImageRotation] = useState(0);
+  const [isDragging, setIsDragging] = useState(false);
+  const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const cropperRef = useRef<HTMLImageElement>(null);
-  const cropperInstanceRef = useRef<Cropper | null>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const imageRef = useRef<HTMLImageElement>(null);
 
-  // Initialize cropper when image is loaded
+  // Draw the cropping interface
+  const drawCropInterface = () => {
+    if (!canvasRef.current || !imageRef.current) return;
+    
+    const canvas = canvasRef.current;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    // Clear canvas
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    
+    // Draw image with rotation and scale
+    ctx.save();
+    ctx.translate(canvas.width / 2, canvas.height / 2);
+    ctx.rotate((imageRotation * Math.PI) / 180);
+    ctx.scale(imageScale, imageScale);
+    ctx.drawImage(
+      imageRef.current,
+      -imageRef.current.width / 2,
+      -imageRef.current.height / 2
+    );
+    ctx.restore();
+
+    // Draw crop overlay
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    
+    // Clear crop area
+    ctx.clearRect(cropArea.x, cropArea.y, cropArea.width, cropArea.height);
+    
+    // Draw crop border
+    ctx.strokeStyle = '#3b82f6';
+    ctx.lineWidth = 2;
+    ctx.strokeRect(cropArea.x, cropArea.y, cropArea.width, cropArea.height);
+    
+    // Draw corner handles
+    const handleSize = 8;
+    ctx.fillStyle = '#3b82f6';
+    [[0, 0], [1, 0], [1, 1], [0, 1]].forEach(([dx, dy]) => {
+      ctx.fillRect(
+        cropArea.x + dx * cropArea.width - handleSize / 2,
+        cropArea.y + dy * cropArea.height - handleSize / 2,
+        handleSize,
+        handleSize
+      );
+    });
+  };
+
   useEffect(() => {
-    if (showCropper && cropperRef.current && previewUrl) {
-      if (cropperInstanceRef.current) {
-        (cropperInstanceRef.current as any).destroy();
-      }
-      
-      cropperInstanceRef.current = new Cropper(cropperRef.current, {} as any);
+    if (showCropper && imageRef.current) {
+      drawCropInterface();
     }
-
-    return () => {
-      if (cropperInstanceRef.current) {
-        (cropperInstanceRef.current as any).destroy();
-        cropperInstanceRef.current = null;
-      }
-    };
-  }, [showCropper, previewUrl]);
+  }, [showCropper, cropArea, imageScale, imageRotation]);
 
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -93,28 +133,75 @@ export const ImageUploader = ({
       reader.onload = (e) => {
         setPreviewUrl(e.target?.result as string);
         setShowCropper(true);
+        
+        // Load image for cropping
+        setTimeout(() => {
+          if (imageRef.current) {
+            imageRef.current.onload = () => {
+              if (canvasRef.current && imageRef.current) {
+                const canvas = canvasRef.current;
+                canvas.width = 600;
+                canvas.height = 400;
+                
+                // Center the crop area
+                setCropArea({
+                  x: 150,
+                  y: 100,
+                  width: 300,
+                  height: 200
+                });
+                
+                drawCropInterface();
+              }
+            };
+            imageRef.current.src = e.target?.result as string;
+          }
+        }, 100);
       };
       reader.readAsDataURL(file);
     }
   };
 
   const resetCropper = () => {
-    if (cropperInstanceRef.current) {
-      (cropperInstanceRef.current as any).reset();
-    }
+    setCropArea({ x: 150, y: 100, width: 300, height: 200 });
+    setImageScale(1);
+    setImageRotation(0);
   };
 
   const rotateCropper = () => {
-    if (cropperInstanceRef.current) {
-      (cropperInstanceRef.current as any).rotate(90);
-    }
+    setImageRotation(prev => (prev + 90) % 360);
+  };
+
+  const getCroppedImage = (): Promise<Blob> => {
+    return new Promise((resolve) => {
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+      if (!ctx || !imageRef.current) {
+        resolve(new Blob());
+        return;
+      }
+
+      canvas.width = cropArea.width;
+      canvas.height = cropArea.height;
+      
+      // Draw the cropped portion
+      ctx.drawImage(
+        imageRef.current,
+        cropArea.x, cropArea.y, cropArea.width, cropArea.height,
+        0, 0, cropArea.width, cropArea.height
+      );
+      
+      canvas.toBlob((blob) => {
+        resolve(blob || new Blob());
+      }, 'image/jpeg', 0.9);
+    });
   };
 
   const handleUpload = async () => {
-    if (!selectedFile || !courseId || !courseDomain || !cropperInstanceRef.current) {
+    if (!selectedFile || !courseId || !courseDomain) {
       toast({
         title: "Upload Error",
-        description: "Missing required information for upload or cropper not initialized",
+        description: "Missing required information for upload",
         variant: "destructive",
       });
       return;
@@ -126,25 +213,12 @@ export const ImageUploader = ({
     setUploadProgress(0);
 
     try {
-      // Get cropped canvas
+      // Get cropped image
       setUploadStatus('Preparing image...');
       setUploadProgress(10);
       
-      const croppedCanvas = (cropperInstanceRef.current as any).getCroppedCanvas({
-        maxWidth: 1920,
-        maxHeight: 1920,
-        imageSmoothingEnabled: true,
-        imageSmoothingQuality: 'high',
-      });
-
-      // Convert canvas to blob
-      const blob = await new Promise<Blob>((resolve, reject) => {
-        croppedCanvas.toBlob((blob) => {
-          if (blob) resolve(blob);
-          else reject(new Error('Failed to create blob from canvas'));
-        }, 'image/jpeg', 0.9);
-      });
-
+      const blob = await getCroppedImage();
+      
       setUploadProgress(25);
       setUploadStatus('Converting image...');
 
@@ -230,10 +304,6 @@ export const ImageUploader = ({
   };
 
   const handleClose = () => {
-    if (cropperInstanceRef.current) {
-      (cropperInstanceRef.current as any).destroy();
-      cropperInstanceRef.current = null;
-    }
     setSelectedFile(null);
     setPreviewUrl('');
     setUploadedData(null);
@@ -375,29 +445,38 @@ export const ImageUploader = ({
                 </div>
                 
                 <div className="border rounded-lg overflow-hidden bg-muted/20 relative">
-                  <style>
-                    {`
-                      .cropper-container { position: relative; }
-                      .cropper-wrap-box { position: relative; }
-                      .cropper-canvas { position: relative; }
-                      .cropper-crop-box { position: absolute; cursor: move; }
-                      .cropper-view-box { position: absolute; cursor: move; overflow: hidden; }
-                      .cropper-dashed { position: absolute; border: 1px dashed #fff; opacity: 0.5; }
-                      .cropper-center { position: absolute; top: 50%; left: 50%; width: 20px; height: 20px; margin: -10px; }
-                      .cropper-face { position: absolute; top: 0; right: 0; bottom: 0; left: 0; background-color: inherit; }
-                      .cropper-point { position: absolute; width: 5px; height: 5px; background-color: #39f; opacity: 0.75; }
-                      .cropper-line { position: absolute; background-color: #39f; }
-                      .cropper-bg { background-image: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAGElEQVQ4T2NkYGAQYcAP3uCTZhw1gGGYhAMA+74DBSCUfhQAAAAASUVORK5CYII='); }
-                    `}
-                  </style>
-                  <div style={{ maxHeight: '400px', overflow: 'hidden' }}>
-                    <img
-                      ref={cropperRef}
-                      src={previewUrl}
-                      alt="Image to crop"
-                      style={{ maxWidth: '100%', height: 'auto', display: 'block' }}
-                    />
-                  </div>
+                  <canvas
+                    ref={canvasRef}
+                    width={600}
+                    height={400}
+                    className="max-w-full cursor-crosshair border"
+                    onMouseDown={(e) => {
+                      const rect = e.currentTarget.getBoundingClientRect();
+                      const x = e.clientX - rect.left;
+                      const y = e.clientY - rect.top;
+                      setIsDragging(true);
+                      setDragStart({ x: x - cropArea.x, y: y - cropArea.y });
+                    }}
+                    onMouseMove={(e) => {
+                      if (!isDragging) return;
+                      const rect = e.currentTarget.getBoundingClientRect();
+                      const x = e.clientX - rect.left;
+                      const y = e.clientY - rect.top;
+                      setCropArea(prev => ({
+                        ...prev,
+                        x: Math.max(0, Math.min(x - dragStart.x, 600 - prev.width)),
+                        y: Math.max(0, Math.min(y - dragStart.y, 400 - prev.height))
+                      }));
+                    }}
+                    onMouseUp={() => setIsDragging(false)}
+                    onMouseLeave={() => setIsDragging(false)}
+                  />
+                  <img
+                    ref={imageRef}
+                    src={previewUrl}
+                    alt="Image to crop"
+                    className="hidden"
+                  />
                 </div>
 
                 <div className="flex gap-2 justify-center">
@@ -408,6 +487,12 @@ export const ImageUploader = ({
                   <Button variant="outline" size="sm" onClick={rotateCropper}>
                     <RotateCw className="h-4 w-4 mr-2" />
                     Rotate
+                  </Button>
+                  <Button variant="outline" size="sm" onClick={() => setImageScale(prev => Math.min(prev + 0.1, 2))}>
+                    Zoom In
+                  </Button>
+                  <Button variant="outline" size="sm" onClick={() => setImageScale(prev => Math.max(prev - 0.1, 0.5))}>
+                    Zoom Out
                   </Button>
                 </div>
 
