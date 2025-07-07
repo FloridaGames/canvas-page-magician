@@ -1,7 +1,5 @@
-import ReactQuill from 'react-quill';
-import Quill from 'quill';
-import 'react-quill/dist/quill.snow.css';
-import { useMemo, useRef, useEffect } from 'react';
+import { Editor } from '@tinymce/tinymce-react';
+import { useRef } from 'react';
 
 interface RichTextEditorProps {
   value: string;
@@ -10,118 +8,6 @@ interface RichTextEditorProps {
   className?: string;
 }
 
-// Custom Quill module to handle Canvas LMS elements with HTML preservation
-let isQuillCustomized = false;
-
-const customizeQuill = () => {
-  if (isQuillCustomized) return;
-  
-  try {
-    const BlockEmbed = Quill.import('blots/block/embed') as any;
-    const Parchment = Quill.import('parchment') as any;
-    
-    // Details blot - preserves complete HTML structure
-    class DetailsBlot extends BlockEmbed {
-      static blotName = 'details';
-      static tagName = 'details';
-      static scope = Parchment.Scope.BLOCK_BLOT;
-      
-      static create(value?: any) {
-        const node = super.create();
-        
-        if (value && typeof value === 'object') {
-          // Set attributes from the value object
-          if (value.style) {
-            node.setAttribute('style', value.style);
-          }
-          if (value.open) {
-            node.setAttribute('open', '');
-          }
-          if (value.innerHTML) {
-            node.innerHTML = value.innerHTML;
-          }
-        } else if (typeof value === 'string') {
-          // Handle raw HTML string
-          node.outerHTML = value;
-          return node;
-        }
-        
-        return node;
-      }
-      
-      static value(domNode: HTMLElement) {
-        return {
-          style: domNode.getAttribute('style') || '',
-          open: domNode.hasAttribute('open'),
-          innerHTML: domNode.innerHTML,
-          outerHTML: domNode.outerHTML
-        };
-      }
-      
-      static formats(domNode: HTMLElement) {
-        return {
-          style: domNode.getAttribute('style') || '',
-          open: domNode.hasAttribute('open'),
-          innerHTML: domNode.innerHTML
-        };
-      }
-    }
-    
-    // Summary blot - preserves complete HTML structure
-    class SummaryBlot extends BlockEmbed {
-      static blotName = 'summary';
-      static tagName = 'summary';
-      static scope = Parchment.Scope.BLOCK_BLOT;
-      
-      static create(value?: any) {
-        const node = super.create();
-        
-        if (value && typeof value === 'object') {
-          if (value.style) {
-            node.setAttribute('style', value.style);
-          }
-          if (value.innerHTML) {
-            node.innerHTML = value.innerHTML;
-          }
-        } else if (typeof value === 'string') {
-          // Handle raw HTML string
-          node.outerHTML = value;
-          return node;
-        }
-        
-        return node;
-      }
-      
-      static value(domNode: HTMLElement) {
-        return {
-          style: domNode.getAttribute('style') || '',
-          innerHTML: domNode.innerHTML,
-          outerHTML: domNode.outerHTML
-        };
-      }
-      
-      static formats(domNode: HTMLElement) {
-        return {
-          style: domNode.getAttribute('style') || '',
-          innerHTML: domNode.innerHTML
-        };
-      }
-    }
-    
-    // Register the blots with Quill
-    Quill.register({
-      'formats/details': DetailsBlot,
-      'formats/summary': SummaryBlot,
-    }, true);
-    
-    isQuillCustomized = true;
-    console.log('✅ Details and Summary blots registered with HTML preservation');
-  } catch (error) {
-    console.warn('❌ Failed to register Details/Summary blots:', error);
-    console.error(error);
-  }
-};
-
 export const RichTextEditor = ({ 
   value, 
   onChange, 
@@ -129,67 +15,61 @@ export const RichTextEditor = ({
   className = ""
 }: RichTextEditorProps) => {
   
-  const quillRef = useRef<ReactQuill>(null);
-  
-  // Customize Quill on component mount
-  useEffect(() => {
-    customizeQuill();
-  }, []);
-  
-  const modules = useMemo(() => ({
-    toolbar: [
-      [{ 'header': [1, 2, 3, 4, 5, 6, false] }],
-      ['bold', 'italic', 'underline', 'strike'],
-      [{ 'color': [] }, { 'background': [] }],
-      [{ 'align': [] }],
-      [{ 'list': 'ordered'}, { 'list': 'bullet' }],
-      [{ 'indent': '-1'}, { 'indent': '+1' }],
-      ['link', 'image', 'video'],
-      ['blockquote', 'code-block'],
-      ['clean']
-    ],
-    clipboard: {
-      matchVisual: false,
-      matchers: [
-        // Custom matcher for details elements
-        ['details', (node: HTMLElement, delta: any) => {
-          const isOpen = node.hasAttribute('open');
-          return delta.insert('\n', { details: { open: isOpen } });
-        }],
-        // Custom matcher for summary elements  
-        ['summary', (node: HTMLElement, delta: any) => {
-          return delta.insert(node.textContent || '', { summary: true });
-        }]
-      ]
-    }
-  }), []);
+  const editorRef = useRef<any>(null);
 
-  const formats = [
-    'header', 'font', 'size',
-    'bold', 'italic', 'underline', 'strike', 'blockquote',
-    'list', 'bullet', 'indent',
-    'link', 'image', 'video',
-    'align', 'color', 'background',
-    'code', 'code-block',
-    'details', 'summary' // Add our custom formats
-  ];
-
-  const handleChange = (content: string) => {
+  const handleEditorChange = (content: string) => {
     onChange(content);
   };
 
   return (
     <div className={`rich-text-editor ${className}`}>
-      <ReactQuill
-        ref={quillRef}
-        theme="snow"
+      <Editor
+        apiKey="no-api-key" // Using TinyMCE without cloud - loads from CDN
+        onInit={(evt, editor) => editorRef.current = editor}
         value={value}
-        onChange={handleChange}
-        placeholder={placeholder}
-        formats={formats}
-        modules={modules}
-        style={{
-          minHeight: '300px'
+        onEditorChange={handleEditorChange}
+        init={{
+          height: 500,
+          menubar: false,
+          plugins: [
+            'advlist', 'autolink', 'lists', 'link', 'image', 'charmap', 'preview',
+            'anchor', 'searchreplace', 'visualblocks', 'code', 'fullscreen',
+            'insertdatetime', 'media', 'table', 'code', 'help', 'wordcount'
+          ],
+          toolbar: 'undo redo | blocks | ' +
+            'bold italic forecolor | alignleft aligncenter ' +
+            'alignright alignjustify | bullist numlist outdent indent | ' +
+            'removeformat | code | help',
+          content_style: 'body { font-family:Helvetica,Arial,sans-serif; font-size:14px }',
+          placeholder: placeholder,
+          // Preserve all HTML including custom elements
+          verify_html: false,
+          cleanup: false,
+          convert_urls: false,
+          remove_script_host: false,
+          relative_urls: false,
+          // Allow all HTML elements and attributes
+          valid_elements: '*[*]',
+          valid_children: '+body[style]',
+          extended_valid_elements: 'details[open|style|class],summary[style|class]',
+          // Preserve custom elements on paste
+          paste_data_images: true,
+          paste_retain_style_properties: "all",
+          paste_merge_formats: false,
+          // Code view for direct HTML editing
+          setup: (editor: any) => {
+            editor.ui.registry.addButton('sourceCode', {
+              text: 'HTML',
+              tooltip: 'View/Edit HTML Source',
+              onAction: () => {
+                const content = editor.getContent();
+                const newContent = prompt('Edit HTML:', content);
+                if (newContent !== null) {
+                  editor.setContent(newContent);
+                }
+              }
+            });
+          }
         }}
       />
       
