@@ -10,7 +10,7 @@ import { toast } from '@/hooks/use-toast';
 interface ImageUploaderProps {
   isOpen: boolean;
   onClose: () => void;
-  onImageUploaded: (imageUrl: string) => void;
+  onImageUploaded: (imageUrl: string, fileId: string, fileName: string) => void;
   courseId?: string;
   courseDomain?: string;
 }
@@ -105,7 +105,7 @@ export const ImageUploader = ({
         description: "Image uploaded successfully",
       });
 
-      onImageUploaded(data.url);
+      onImageUploaded(data.previewUrl, data.fileId, data.fileName);
       handleClose();
 
     } catch (error) {

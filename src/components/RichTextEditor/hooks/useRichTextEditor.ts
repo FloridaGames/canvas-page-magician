@@ -106,15 +106,25 @@ export const useRichTextEditor = ({ value, onChange, inline, courseId, courseDom
   }, [selectedImage]);
 
   // Handle image replacement
-  const handleImageUploaded = useCallback((newImageUrl: string) => {
+  const handleImageUploaded = useCallback((newImageUrl: string, fileId: string, fileName: string) => {
     if (selectedImage && editorRef.current) {
-      selectedImage.src = newImageUrl;
-      selectedImage.style.outline = '';
-      selectedImage.style.cursor = '';
+      // Create the Canvas-specific HTML structure
+      const canvasImageHtml = `<div class="grid-row" style="padding: 0%;"><img id="${fileId}" src="${newImageUrl}" alt="${fileName}" width="100%" /></div>`;
+      
+      // Replace the selected image with the new Canvas structure
+      const tempDiv = document.createElement('div');
+      tempDiv.innerHTML = canvasImageHtml;
+      const newImageElement = tempDiv.firstChild as HTMLElement;
+      
+      selectedImage.parentNode?.replaceChild(newImageElement, selectedImage);
+      
+      // Clear selection
       setSelectedImage(null);
+      
+      // Trigger input event to update the content
       handleInput();
     }
-  }, [selectedImage]);
+  }, [selectedImage, handleInput]);
 
   // Add image click listener
   useEffect(() => {

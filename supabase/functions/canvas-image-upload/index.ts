@@ -153,6 +153,9 @@ serve(async (req) => {
         success: true,
         file: fileData,
         url: fileData.url || `https://${domain}/courses/${courseId}/files/${fileData.id}/preview`,
+        fileId: fileData.id,
+        previewUrl: `/courses/${courseId}/files/${fileData.id}/preview`,
+        fileName: fileName,
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
