@@ -141,16 +141,23 @@ export const RichTextEditor = ({
       Details,
       Summary,
     ],
-    content: value || '<p></p>',
+    content: value || '<p>Start typing...</p>',
     onUpdate: ({ editor }) => {
+      console.log('Editor updated:', editor.getHTML());
       onChange(editor.getHTML());
+    },
+    onCreate: ({ editor }) => {
+      console.log('Editor created with content:', editor.getHTML());
     },
     editorProps: {
       attributes: {
-        class: 'prose prose-sm max-w-none focus:outline-none min-h-[300px] p-4 [&_p]:my-0 [&_p]:leading-normal',
+        class: 'prose prose-sm max-w-none focus:outline-none min-h-[300px] p-4 text-foreground',
       },
     },
   });
+
+  console.log('Editor instance:', editor);
+  console.log('Initial value:', value);
 
   if (!editor) {
     return null;
@@ -304,16 +311,17 @@ export const RichTextEditor = ({
   };
 
   return (
-    <div className={`rich-text-editor border border-border rounded-lg overflow-hidden ${className}`}>
+    <div className={`rich-text-editor border border-border rounded-lg overflow-hidden bg-background ${className}`}>
       <MenuBar />
-      <EditorContent 
-        editor={editor} 
-        className="min-h-[300px]"
-        placeholder={placeholder}
-      />
+      <div className="min-h-[300px] p-4 bg-background border-t border-border">
+        <EditorContent 
+          editor={editor} 
+          className="w-full h-full text-foreground [&_.ProseMirror]:outline-none [&_.ProseMirror]:min-h-[250px] [&_.ProseMirror]:text-foreground"
+        />
+      </div>
       
       {/* Debug info */}
-      {value.includes('<details') && (
+      {value && value.includes('<details') && (
         <div className="mt-2 p-2 bg-green-50 border border-green-200 rounded text-xs text-green-700">
           ✓ Canvas LMS details/summary elements detected and preserved
         </div>
