@@ -1,6 +1,7 @@
 import { useRef, useEffect, useCallback, useState } from 'react';
 import SelectableImage from '../SelectableImage';
 import { createRoot } from 'react-dom/client';
+import React from 'react';
 
 interface UseRichTextEditorProps {
   value: string;
@@ -114,7 +115,7 @@ export const useRichTextEditor = ({ value, onChange, inline, courseId, courseDom
     };
     
     root.render(
-      SelectableImage({
+      React.createElement(SelectableImage, {
         src: currentSrc,
         alt: currentAlt,
         courseId,
