@@ -80,12 +80,16 @@ export const useRichTextEditor = ({ value, onChange, inline, courseId, courseDom
     handleInput();
   }, [handleInput]);
 
-  // Handle image/iframe selection
+  // Handle image/iframe selection with improved debugging
   const handleImageClick = useCallback((e: Event) => {
     const target = e.target as HTMLElement;
+    console.log('Click detected on element:', target.tagName, target);
+    
     if (target.tagName === 'IMG' || target.tagName === 'IFRAME') {
       e.preventDefault();
       e.stopPropagation();
+      
+      console.log('Valid target found:', target.tagName);
       
       // Remove previous selection
       if (selectedImage) {
@@ -108,7 +112,7 @@ export const useRichTextEditor = ({ value, onChange, inline, courseId, courseDom
       console.log('Selected element src:', currentSrc);
       
       // Add visual selection indicator
-      element.style.outline = '2px solid #3b82f6';
+      element.style.outline = '3px solid #3b82f6';
       element.style.cursor = 'pointer';
       element.style.position = 'relative';
       
@@ -123,12 +127,12 @@ export const useRichTextEditor = ({ value, onChange, inline, courseId, courseDom
         background: #3b82f6;
         color: white;
         border: none;
-        padding: 4px 8px;
+        padding: 6px 12px;
         border-radius: 4px;
         font-size: 12px;
         cursor: pointer;
         z-index: 1000;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        box-shadow: 0 2px 8px rgba(0,0,0,0.3);
       `;
       
       // Position button relative to element
@@ -140,9 +144,12 @@ export const useRichTextEditor = ({ value, onChange, inline, courseId, courseDom
         changeButton.addEventListener('click', (btnE) => {
           btnE.preventDefault();
           btnE.stopPropagation();
+          console.log('Change button clicked');
           setShowImageUploader(true);
         });
       }
+    } else {
+      console.log('Non-target element clicked:', target.tagName);
     }
   }, [selectedImage]);
 

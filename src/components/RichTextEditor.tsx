@@ -45,7 +45,7 @@ export const RichTextEditor = ({
       <div 
         ref={editorRef}
         contentEditable
-        className={`${inline ? 'min-h-[2rem] p-2' : 'min-h-[300px] p-4'} text-foreground focus:outline-none prose prose-sm max-w-none [&_details]:border [&_details]:border-border [&_details]:rounded [&_details]:p-2 [&_details]:my-2 [&_summary]:font-medium [&_summary]:cursor-pointer [&_summary]:mb-2 [&_iframe]:cursor-pointer [&_iframe]:border [&_iframe]:border-border [&_iframe]:rounded empty:before:content-[attr(data-placeholder)] empty:before:text-muted-foreground empty:before:pointer-events-none ${inline ? 'hover:bg-muted/10 focus:bg-muted/20 rounded transition-colors' : ''}`}
+        className={`${inline ? 'min-h-[2rem] p-2' : 'min-h-[300px] p-4'} text-foreground focus:outline-none prose prose-sm max-w-none [&_details]:border [&_details]:border-border [&_details]:rounded [&_details]:p-2 [&_details]:my-2 [&_summary]:font-medium [&_summary]:cursor-pointer [&_summary]:mb-2 [&_iframe]:cursor-pointer [&_iframe]:border [&_iframe]:border-border [&_iframe]:rounded [&_iframe]:pointer-events-auto empty:before:content-[attr(data-placeholder)] empty:before:text-muted-foreground empty:before:pointer-events-none ${inline ? 'hover:bg-muted/10 focus:bg-muted/20 rounded transition-colors' : ''}`}
         onInput={handleInput}
         onPaste={handlePaste}
         onFocus={handleFocus}
