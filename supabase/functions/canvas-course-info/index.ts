@@ -23,9 +23,9 @@ serve(async (req) => {
       throw new Error('Domain and course ID are required');
     }
 
-    const apiKey = Deno.env.get('CANVAS_API_KEY');
+    const apiKey = Deno.env.get('CANVAS_API_TOKEN');
     if (!apiKey) {
-      throw new Error('Canvas API key not configured');
+      throw new Error('Canvas API token not configured');
     }
 
     // Construct Canvas API URL
