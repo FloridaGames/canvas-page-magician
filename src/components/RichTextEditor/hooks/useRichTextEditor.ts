@@ -91,23 +91,72 @@ export const useRichTextEditor = ({ value, onChange, inline, courseId, courseDom
       if (selectedImage) {
         selectedImage.style.outline = '';
         selectedImage.style.cursor = '';
+        // Remove any existing change button
+        const existingButton = selectedImage.parentNode?.querySelector('.change-image-button');
+        if (existingButton) {
+          existingButton.remove();
+        }
       }
       
       const img = target as HTMLImageElement;
       setSelectedImage(img);
       
+      // Get and log the current image src
+      const currentSrc = img.src;
+      console.log('Selected image src:', currentSrc);
+      
       // Add visual selection indicator
       img.style.outline = '2px solid #3b82f6';
       img.style.cursor = 'pointer';
+      img.style.position = 'relative';
       
-      // Show upload dialog
-      setShowImageUploader(true);
+      // Create and show "Change Image" button
+      const changeButton = document.createElement('button');
+      changeButton.className = 'change-image-button';
+      changeButton.innerHTML = 'Change Image';
+      changeButton.style.cssText = `
+        position: absolute;
+        top: 8px;
+        right: 8px;
+        background: #3b82f6;
+        color: white;
+        border: none;
+        padding: 4px 8px;
+        border-radius: 4px;
+        font-size: 12px;
+        cursor: pointer;
+        z-index: 1000;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+      `;
+      
+      // Position button relative to image
+      const imgRect = img.getBoundingClientRect();
+      const container = img.parentNode as HTMLElement;
+      if (container) {
+        container.style.position = 'relative';
+        container.appendChild(changeButton);
+        
+        changeButton.addEventListener('click', (btnE) => {
+          btnE.preventDefault();
+          btnE.stopPropagation();
+          setShowImageUploader(true);
+        });
+      }
     }
   }, [selectedImage]);
 
   // Handle image replacement
   const handleImageUploaded = useCallback((newImageUrl: string, fileId: string, fileName: string) => {
     if (selectedImage && editorRef.current) {
+      // Log the new image src for debugging
+      console.log('New uploaded image src:', newImageUrl);
+      
+      // Remove the change button before replacement
+      const changeButton = selectedImage.parentNode?.querySelector('.change-image-button');
+      if (changeButton) {
+        changeButton.remove();
+      }
+      
       // Create the Canvas-specific HTML structure
       const canvasImageHtml = `<div class="grid-row" style="padding: 0%;"><img id="${fileId}" src="${newImageUrl}" alt="${fileName}" width="100%" /></div>`;
       
@@ -118,10 +167,15 @@ export const useRichTextEditor = ({ value, onChange, inline, courseId, courseDom
       
       selectedImage.parentNode?.replaceChild(newImageElement, selectedImage);
       
-      // Clear selection
+      // Clear selection and reset styles
+      selectedImage.style.outline = '';
+      selectedImage.style.cursor = '';
       setSelectedImage(null);
       
-      // Trigger input event to update the content
+      // Log the replacement completion
+      console.log('Image replacement completed');
+      
+      // Trigger input event to update the content and send back via API
       handleInput();
     }
   }, [selectedImage, handleInput]);
@@ -140,6 +194,12 @@ export const useRichTextEditor = ({ value, onChange, inline, courseId, courseDom
   // Remove selection when clicking outside
   const handleDocumentClick = useCallback((e: Event) => {
     if (selectedImage && editorRef.current && !editorRef.current.contains(e.target as Node)) {
+      // Remove the change button
+      const changeButton = selectedImage.parentNode?.querySelector('.change-image-button');
+      if (changeButton) {
+        changeButton.remove();
+      }
+      
       selectedImage.style.outline = '';
       selectedImage.style.cursor = '';
       setSelectedImage(null);
