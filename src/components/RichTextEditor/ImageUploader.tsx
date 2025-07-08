@@ -10,7 +10,7 @@ import { toast } from '@/hooks/use-toast';
 interface ImageUploaderProps {
   isOpen: boolean;
   onClose: () => void;
-  onImageUploaded: (imageUrl: string, fileId: string, fileName: string) => void;
+  onImageUploaded: (imageUrl: string, fileId: string, fileName: string, cloudinaryUrl?: string) => void;
   courseId?: string;
   courseDomain?: string;
 }
@@ -81,7 +81,7 @@ export const ImageUploader = ({
         reader.readAsDataURL(selectedFile);
       });
 
-      // Upload to Canvas
+      // Upload to Canvas and Cloudinary
       const { data, error } = await supabase.functions.invoke('canvas-image-upload', {
         body: {
           domain: courseDomain,
@@ -89,6 +89,7 @@ export const ImageUploader = ({
           imageFile: base64,
           fileName: selectedFile.name,
           mimeType: selectedFile.type,
+          cloudinaryFolder: 'BachelorBestuurskunde',
         },
       });
 
@@ -105,7 +106,7 @@ export const ImageUploader = ({
         description: "Image uploaded successfully",
       });
 
-      onImageUploaded(data.previewUrl, data.fileId, data.fileName);
+      onImageUploaded(data.previewUrl, data.fileId, data.fileName, data.cloudinaryUrl);
       handleClose();
 
     } catch (error) {

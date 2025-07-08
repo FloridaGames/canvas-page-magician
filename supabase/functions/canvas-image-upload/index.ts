@@ -11,6 +11,7 @@ interface CanvasImageUploadRequest {
   imageFile: string; // base64 encoded file
   fileName: string;
   mimeType: string;
+  cloudinaryFolder?: string;
 }
 
 serve(async (req) => {
@@ -20,7 +21,7 @@ serve(async (req) => {
   }
 
   try {
-    const { domain, courseId, imageFile, fileName, mimeType }: CanvasImageUploadRequest = await req.json();
+    const { domain, courseId, imageFile, fileName, mimeType, cloudinaryFolder }: CanvasImageUploadRequest = await req.json();
 
     if (!domain || !courseId || !imageFile || !fileName) {
       return new Response(
@@ -148,6 +149,69 @@ serve(async (req) => {
 
     console.log('File upload completed:', fileData);
 
+    // Upload to Cloudinary if folder is specified
+    let cloudinaryUrl = null;
+    if (cloudinaryFolder) {
+      const cloudinaryName = Deno.env.get('CLOUDINARY_CLOUD_NAME');
+      const cloudinaryApiKey = Deno.env.get('CLOUDINARY_API_KEY');
+      const cloudinaryApiSecret = Deno.env.get('CLOUDINARY_API_SECRET');
+
+      if (!cloudinaryName || !cloudinaryApiKey || !cloudinaryApiSecret) {
+        console.error('Cloudinary credentials not found');
+      } else {
+        try {
+          console.log(`Uploading to Cloudinary folder: ${cloudinaryFolder}`);
+          
+          // Generate signature for Cloudinary upload
+          const timestamp = Math.round(Date.now() / 1000);
+          const folderName = cloudinaryFolder.split('/').pop(); // Extract folder name from URL
+          const publicId = `${folderName}/${fileName.split('.')[0]}`;
+          
+          const paramsToSign = `public_id=${publicId}&timestamp=${timestamp}`;
+          const signature = await crypto.subtle.importKey(
+            'raw',
+            new TextEncoder().encode(cloudinaryApiSecret),
+            { name: 'HMAC', hash: 'SHA-1' },
+            false,
+            ['sign']
+          ).then(key => 
+            crypto.subtle.sign('HMAC', key, new TextEncoder().encode(paramsToSign))
+          ).then(signature => 
+            Array.from(new Uint8Array(signature))
+              .map(b => b.toString(16).padStart(2, '0'))
+              .join('')
+          );
+
+          // Upload to Cloudinary
+          const cloudinaryFormData = new FormData();
+          cloudinaryFormData.append('file', blob);
+          cloudinaryFormData.append('public_id', publicId);
+          cloudinaryFormData.append('api_key', cloudinaryApiKey);
+          cloudinaryFormData.append('timestamp', timestamp.toString());
+          cloudinaryFormData.append('signature', signature);
+
+          const cloudinaryResponse = await fetch(
+            `https://api.cloudinary.com/v1_1/${cloudinaryName}/image/upload`,
+            {
+              method: 'POST',
+              body: cloudinaryFormData,
+            }
+          );
+
+          if (cloudinaryResponse.ok) {
+            const cloudinaryData = await cloudinaryResponse.json();
+            cloudinaryUrl = cloudinaryData.secure_url;
+            console.log('Cloudinary upload successful:', cloudinaryUrl);
+          } else {
+            const errorText = await cloudinaryResponse.text();
+            console.error('Cloudinary upload failed:', errorText);
+          }
+        } catch (error) {
+          console.error('Error uploading to Cloudinary:', error);
+        }
+      }
+    }
+
     return new Response(
       JSON.stringify({
         success: true,
@@ -156,6 +220,7 @@ serve(async (req) => {
         fileId: fileData.id,
         previewUrl: `/courses/${courseId}/files/${fileData.id}/preview`,
         fileName: fileName,
+        cloudinaryUrl: cloudinaryUrl,
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
