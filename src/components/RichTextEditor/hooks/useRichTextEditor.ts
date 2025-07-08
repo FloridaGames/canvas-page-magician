@@ -154,11 +154,10 @@ export const useRichTextEditor = ({ value, onChange, inline, courseId, courseDom
   }, [selectedImage]);
 
   // Handle image replacement
-  const handleImageUploaded = useCallback((newImageUrl: string, fileId: string, fileName: string, cloudinaryUrl?: string) => {
+  const handleImageUploaded = useCallback((newImageUrl: string, fileId: string, fileName: string) => {
     if (selectedImage && editorRef.current) {
       // Log the new image src for debugging
       console.log('New uploaded image src:', newImageUrl);
-      console.log('Cloudinary URL:', cloudinaryUrl);
       
       // Remove the change button before replacement
       const changeButton = selectedImage.parentNode?.querySelector('.change-image-button');
@@ -166,23 +165,15 @@ export const useRichTextEditor = ({ value, onChange, inline, courseId, courseDom
         changeButton.remove();
       }
       
-      if (selectedImage.tagName === 'IFRAME' && cloudinaryUrl) {
-        // Update iframe with Cloudinary URL
-        const iframe = selectedImage as HTMLIFrameElement;
-        iframe.src = cloudinaryUrl;
-        iframe.setAttribute('data-api-endpoint', cloudinaryUrl);
-        console.log('Updated iframe with Cloudinary URL:', cloudinaryUrl);
-      } else {
-        // Create the Canvas-specific HTML structure for img tags
-        const canvasImageHtml = `<div class="grid-row" style="padding: 0%;"><img id="${fileId}" src="${newImageUrl}" alt="${fileName}" width="100%" /></div>`;
-        
-        // Replace the selected image with the new Canvas structure
-        const tempDiv = document.createElement('div');
-        tempDiv.innerHTML = canvasImageHtml;
-        const newImageElement = tempDiv.firstChild as HTMLElement;
-        
-        selectedImage.parentNode?.replaceChild(newImageElement, selectedImage);
-      }
+      // Create the Canvas-specific HTML structure for img tags
+      const canvasImageHtml = `<div class="grid-row" style="padding: 0%;"><img id="${fileId}" src="${newImageUrl}" alt="${fileName}" width="100%" /></div>`;
+      
+      // Replace the selected image with the new Canvas structure
+      const tempDiv = document.createElement('div');
+      tempDiv.innerHTML = canvasImageHtml;
+      const newImageElement = tempDiv.firstChild as HTMLElement;
+      
+      selectedImage.parentNode?.replaceChild(newImageElement, selectedImage);
       
       // Clear selection and reset styles
       selectedImage.style.outline = '';
