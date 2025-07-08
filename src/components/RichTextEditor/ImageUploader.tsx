@@ -2,7 +2,7 @@ import { useState, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Upload, Loader2, X } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
@@ -137,6 +137,9 @@ export const ImageUploader = ({
             <Upload className="h-5 w-5" />
             Upload New Image
           </DialogTitle>
+          <DialogDescription>
+            Choose an image file to upload to Canvas. The image will replace the selected image in your content.
+          </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4">
