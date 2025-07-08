@@ -24,6 +24,7 @@ serve(async (req) => {
     }
 
     const apiKey = Deno.env.get('CANVAS_API_TOKEN');
+    console.log('Canvas API token exists:', !!apiKey);
     if (!apiKey) {
       throw new Error('Canvas API token not configured');
     }
