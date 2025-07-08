@@ -255,7 +255,7 @@ export const useRichTextEditor = ({ value, onChange, inline, courseId, courseDom
           const container = iframe.parentNode as HTMLElement;
           if (container) {
             container.style.position = 'relative';
-            container.style.display = 'inline-block';
+            // Don't change display property to preserve original layout
             container.appendChild(overlay);
           }
         });
