@@ -78,7 +78,7 @@ const Index = () => {
         onBackToPages={handleBackToPages}
       />
       
-      <main className="container mx-auto px-4 py-8">
+      <main className="max-w-none mx-auto px-6 py-8">{/* Removed container class and increased padding */}
         {currentState === "input" && (
           <CourseInput onCourseSet={handleCourseSet} />
         )}

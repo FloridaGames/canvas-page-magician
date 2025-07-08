@@ -25,7 +25,7 @@ export const PageEditor = ({ course, page, isNewPage, onBack }: PageEditorProps)
   } = usePageEditor({ course, page, isNewPage, onBack });
 
   return (
-    <div className="max-w-4xl mx-auto">
+    <div className="max-w-none mx-auto">{/* Removed max-w-4xl constraint */}
       <PageEditorHeader
         pageTitle={getPageTitle()}
         isNewPage={isNewPage}

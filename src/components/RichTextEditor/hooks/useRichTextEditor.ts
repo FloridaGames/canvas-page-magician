@@ -190,13 +190,14 @@ export const useRichTextEditor = ({ value, onChange, inline, courseId, courseDom
     }
   }, [selectedImage, handleInput]);
 
-  // Add image click listener
+  // Add image/iframe click listener
   useEffect(() => {
     const editor = editorRef.current;
     if (editor) {
-      editor.addEventListener('click', handleImageClick);
+      // Add click event to capture both img and iframe elements
+      editor.addEventListener('click', handleImageClick, true); // Use capture phase
       return () => {
-        editor.removeEventListener('click', handleImageClick);
+        editor.removeEventListener('click', handleImageClick, true);
       };
     }
   }, [handleImageClick]);
