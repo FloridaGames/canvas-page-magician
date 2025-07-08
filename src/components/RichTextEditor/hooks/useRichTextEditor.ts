@@ -85,10 +85,17 @@ export const useRichTextEditor = ({ value, onChange, inline, courseId, courseDom
   const replaceImageWithSelectableImage = useCallback((imgElement: HTMLImageElement) => {
     const currentSrc = imgElement.src;
     const currentAlt = imgElement.alt || 'Image';
+    const originalWidth = imgElement.width || imgElement.offsetWidth;
+    const originalHeight = imgElement.height || imgElement.offsetHeight;
+    const originalStyle = imgElement.style.cssText;
+    const originalClass = imgElement.className;
     
     // Create a wrapper div for the SelectableImage component
     const wrapper = document.createElement('div');
     wrapper.className = 'selectable-image-wrapper';
+    wrapper.style.display = 'inline-block';
+    wrapper.style.width = originalWidth ? `${originalWidth}px` : 'auto';
+    wrapper.style.height = originalHeight ? `${originalHeight}px` : 'auto';
     
     // Replace the original img with our wrapper
     imgElement.parentNode?.replaceChild(wrapper, imgElement);
@@ -97,21 +104,37 @@ export const useRichTextEditor = ({ value, onChange, inline, courseId, courseDom
     const root = createRoot(wrapper);
     
     const handleImageChange = (newSrc: string, fileId: string, fileName: string) => {
-      // Create new Canvas-specific HTML structure
-      const canvasImageHtml = `<div class="grid-row" style="padding: 0%;"><img id="${fileId}" src="${newSrc}" alt="${fileName}" width="100%" /></div>`;
+      // Create new img element with original dimensions
+      const newImg = document.createElement('img');
+      newImg.src = newSrc;
+      newImg.alt = fileName || currentAlt;
+      newImg.id = fileId;
+      newImg.className = originalClass;
+      newImg.style.cssText = originalStyle;
       
-      // Replace the wrapper with the new image structure
-      const tempDiv = document.createElement('div');
-      tempDiv.innerHTML = canvasImageHtml;
-      const newImageElement = tempDiv.firstChild as HTMLElement;
+      // Preserve original dimensions
+      if (originalWidth) newImg.width = originalWidth;
+      if (originalHeight) newImg.height = originalHeight;
       
-      wrapper.parentNode?.replaceChild(newImageElement, wrapper);
+      // Ensure the image loads and displays immediately
+      newImg.onload = () => {
+        // Replace the wrapper with the new image
+        wrapper.parentNode?.replaceChild(newImg, wrapper);
+        
+        // Dispose the React root
+        root.unmount();
+        
+        // Trigger input event to update content
+        handleInput();
+      };
       
-      // Dispose the React root
-      root.unmount();
-      
-      // Trigger input event to update content
-      handleInput();
+      // If image fails to load, still replace but log error
+      newImg.onerror = () => {
+        console.error('Failed to load new image:', newSrc);
+        wrapper.parentNode?.replaceChild(newImg, wrapper);
+        root.unmount();
+        handleInput();
+      };
     };
     
     root.render(
@@ -121,7 +144,8 @@ export const useRichTextEditor = ({ value, onChange, inline, courseId, courseDom
         courseId,
         courseDomain,
         onImageChange: handleImageChange,
-        className: imgElement.className
+        className: originalClass,
+        style: { width: '100%', height: '100%', objectFit: 'contain' }
       })
     );
   }, [courseId, courseDomain, handleInput]);

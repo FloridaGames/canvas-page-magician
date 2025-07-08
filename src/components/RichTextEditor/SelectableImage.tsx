@@ -9,6 +9,7 @@ interface SelectableImageProps {
   src: string;
   alt: string;
   className?: string;
+  style?: React.CSSProperties;
   courseId?: string;
   courseDomain?: string;
   onImageChange?: (newSrc: string, fileId: string, fileName: string) => void;
@@ -18,6 +19,7 @@ const SelectableImage: React.FC<SelectableImageProps> = ({
   src,
   alt,
   className,
+  style,
   courseId,
   courseDomain,
   onImageChange
@@ -136,7 +138,10 @@ const SelectableImage: React.FC<SelectableImageProps> = ({
             "w-full h-auto transition-all duration-200",
             isSelected && "brightness-90"
           )}
-          style={{ position: 'relative' }}
+          style={{ 
+            position: 'relative',
+            ...style
+          }}
         />
 
         {/* Selection overlay */}
