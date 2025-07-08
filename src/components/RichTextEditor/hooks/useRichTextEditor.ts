@@ -197,17 +197,89 @@ export const useRichTextEditor = ({ value, onChange, inline, courseId, courseDom
     }
   }, [selectedImage, handleInput]);
 
-  // Add image/iframe click listener
+  // Add iframe overlays and event listeners
   useEffect(() => {
     const editor = editorRef.current;
     if (editor) {
-      // Add click event to capture both img and iframe elements
-      editor.addEventListener('click', handleImageClick, true); // Use capture phase
+      // Function to add overlays to iframes
+      const addIframeOverlays = () => {
+        const iframes = editor.querySelectorAll('iframe');
+        iframes.forEach((iframe) => {
+          // Check if overlay already exists
+          const existingOverlay = iframe.parentNode?.querySelector('.iframe-overlay');
+          if (existingOverlay) return;
+
+          // Create overlay div
+          const overlay = document.createElement('div');
+          overlay.className = 'iframe-overlay';
+          overlay.style.cssText = `
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: transparent;
+            cursor: pointer;
+            z-index: 10;
+            border: 2px solid transparent;
+            border-radius: 4px;
+            transition: border-color 0.2s;
+          `;
+
+          // Add hover effect
+          overlay.addEventListener('mouseenter', () => {
+            overlay.style.borderColor = '#3b82f6';
+            overlay.style.backgroundColor = 'rgba(59, 130, 246, 0.1)';
+          });
+
+          overlay.addEventListener('mouseleave', () => {
+            if (selectedImage !== iframe) {
+              overlay.style.borderColor = 'transparent';
+              overlay.style.backgroundColor = 'transparent';
+            }
+          });
+
+          // Add click handler to overlay
+          overlay.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            console.log('Iframe overlay clicked for:', iframe);
+            
+            // Simulate the click on the iframe element
+            const clickEvent = new Event('click', { bubbles: true });
+            Object.defineProperty(clickEvent, 'target', { value: iframe });
+            handleImageClick(clickEvent);
+          });
+
+          // Position iframe container relatively and add overlay
+          const container = iframe.parentNode as HTMLElement;
+          if (container) {
+            container.style.position = 'relative';
+            container.style.display = 'inline-block';
+            container.appendChild(overlay);
+          }
+        });
+      };
+
+      // Add overlays initially and on content changes
+      addIframeOverlays();
+      
+      // Observer to add overlays to new iframes
+      const observer = new MutationObserver(() => {
+        addIframeOverlays();
+      });
+      
+      observer.observe(editor, { childList: true, subtree: true });
+
+      // Regular click handler for images
+      editor.addEventListener('click', handleImageClick, true);
+      
       return () => {
+        observer.disconnect();
         editor.removeEventListener('click', handleImageClick, true);
       };
     }
-  }, [handleImageClick]);
+  }, [handleImageClick, selectedImage]);
 
   // Remove selection when clicking outside
   const handleDocumentClick = useCallback((e: Event) => {
