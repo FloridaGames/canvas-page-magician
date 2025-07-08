@@ -1,6 +1,5 @@
 import { MenuBar } from './RichTextEditor/MenuBar';
 import { useRichTextEditor } from './RichTextEditor/hooks/useRichTextEditor';
-import { ImageUploader } from './RichTextEditor/ImageUploader';
 
 interface RichTextEditorProps {
   value: string;
@@ -24,15 +23,11 @@ export const RichTextEditor = ({
   const {
     editorRef,
     showToolbar,
-    selectedImage,
-    showImageUploader,
     handleInput,
     handleFocus,
     handleBlur,
     handleSelection,
     handlePaste,
-    handleImageUploaded,
-    setShowImageUploader,
   } = useRichTextEditor({ value, onChange, inline, courseId, courseDomain });
 
   return (
@@ -66,13 +61,6 @@ export const RichTextEditor = ({
         </div>
       )}
 
-      <ImageUploader
-        isOpen={showImageUploader}
-        onClose={() => setShowImageUploader(false)}
-        onImageUploaded={handleImageUploaded}
-        courseId={courseId}
-        courseDomain={courseDomain}
-      />
     </div>
   );
 };
