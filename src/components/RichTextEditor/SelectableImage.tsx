@@ -1,4 +1,4 @@
-import React, { useState, useRef, useCallback } from 'react';
+import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Upload, Crop as CropIcon, Check, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -6,6 +6,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import ReactCrop, { Crop, PixelCrop } from 'react-image-crop';
 import 'react-image-crop/dist/ReactCrop.css';
+import { useImageSize } from 'react-image-size';
 
 interface SelectableImageProps {
   src: string;
@@ -36,8 +37,19 @@ const SelectableImage: React.FC<SelectableImageProps> = ({
   const [showCrop, setShowCrop] = useState(false);
   const [crop, setCrop] = useState<Crop>();
   const [tempImageSrc, setTempImageSrc] = useState<string>('');
+  const [storedDimensions, setStoredDimensions] = useState<{width: number, height: number} | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const imgRef = useRef<HTMLImageElement>(null);
+
+  // Get image dimensions using react-image-size
+  const [dimensions, { loading: dimensionsLoading, error: dimensionsError }] = useImageSize(currentSrc);
+
+  // Store dimensions when image is selected and dimensions are loaded
+  useEffect(() => {
+    if (isSelected && dimensions && !dimensionsLoading && !dimensionsError) {
+      setStoredDimensions({ width: dimensions.width, height: dimensions.height });
+    }
+  }, [isSelected, dimensions, dimensionsLoading, dimensionsError]);
 
   const handleImageClick = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -161,7 +173,17 @@ const SelectableImage: React.FC<SelectableImageProps> = ({
     setIsUploading(true);
 
     try {
-      if (courseId && courseDomain) {
+      // If we have stored dimensions, automatically crop and resize
+      if (storedDimensions) {
+        const croppedImageUrl = await autoCropAndResize(file, storedDimensions.width, storedDimensions.height);
+        setCurrentSrc(croppedImageUrl);
+        onImageChange?.(croppedImageUrl, '', file.name);
+        
+        toast({
+          title: "Success",
+          description: "Image uploaded and resized automatically",
+        });
+      } else if (courseId && courseDomain) {
         // Upload to Canvas
         const base64 = await new Promise<string>((resolve) => {
           const reader = new FileReader();
@@ -213,6 +235,73 @@ const SelectableImage: React.FC<SelectableImageProps> = ({
       }
     }
   };
+
+  // Auto crop and resize function
+  const autoCropAndResize = useCallback((
+    file: File,
+    targetWidth: number,
+    targetHeight: number
+  ): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+
+        if (!ctx) {
+          reject(new Error('Failed to get canvas context'));
+          return;
+        }
+
+        // Set canvas size to target dimensions
+        canvas.width = targetWidth;
+        canvas.height = targetHeight;
+
+        // Calculate crop dimensions to maintain aspect ratio
+        const sourceAspect = img.width / img.height;
+        const targetAspect = targetWidth / targetHeight;
+
+        let sourceWidth = img.width;
+        let sourceHeight = img.height;
+        let sourceX = 0;
+        let sourceY = 0;
+
+        if (sourceAspect > targetAspect) {
+          // Source is wider, crop width
+          sourceWidth = img.height * targetAspect;
+          sourceX = (img.width - sourceWidth) / 2;
+        } else {
+          // Source is taller, crop height
+          sourceHeight = img.width / targetAspect;
+          sourceY = (img.height - sourceHeight) / 2;
+        }
+
+        // Draw cropped and resized image
+        ctx.drawImage(
+          img,
+          sourceX,
+          sourceY,
+          sourceWidth,
+          sourceHeight,
+          0,
+          0,
+          targetWidth,
+          targetHeight
+        );
+
+        canvas.toBlob((blob) => {
+          if (!blob) {
+            reject(new Error('Failed to create blob'));
+            return;
+          }
+          resolve(URL.createObjectURL(blob));
+        }, 'image/jpeg', 0.9);
+      };
+
+      img.onerror = () => reject(new Error('Failed to load image'));
+      img.src = URL.createObjectURL(file);
+    });
+  }, []);
 
   if (showCrop) {
     return (
@@ -309,15 +398,17 @@ const SelectableImage: React.FC<SelectableImageProps> = ({
       {/* Action Buttons */}
       {isSelected && (
         <div className="absolute top-2 right-2 z-10 flex gap-2">
-          <Button
-            onClick={handleCropImage}
-            size="sm"
-            variant="secondary"
-            className="shadow-lg"
-          >
-            <CropIcon className="w-4 h-4 mr-2" />
-            Crop
-          </Button>
+          {!storedDimensions && (
+            <Button
+              onClick={handleCropImage}
+              size="sm"
+              variant="secondary"
+              className="shadow-lg"
+            >
+              <CropIcon className="w-4 h-4 mr-2" />
+              Crop
+            </Button>
+          )}
           <Button
             onClick={handleChangeImage}
             size="sm"
@@ -325,8 +416,15 @@ const SelectableImage: React.FC<SelectableImageProps> = ({
             className="shadow-lg"
           >
             <Upload className="w-4 h-4 mr-2" />
-            {isUploading ? 'Uploading...' : 'Change'}
+            {isUploading ? 'Uploading...' : storedDimensions ? 'Replace & Auto-Resize' : 'Change'}
           </Button>
+        </div>
+      )}
+      
+      {/* Dimensions Display */}
+      {isSelected && storedDimensions && (
+        <div className="absolute bottom-2 left-2 z-10 bg-black/70 text-white text-xs px-2 py-1 rounded">
+          Target: {storedDimensions.width}×{storedDimensions.height}px
         </div>
       )}
 
