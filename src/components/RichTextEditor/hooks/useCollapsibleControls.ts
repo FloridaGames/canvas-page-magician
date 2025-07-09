@@ -97,8 +97,8 @@ export const useCollapsibleControls = ({ editorRef, onContentChange }: UseCollap
     
     if (editorRect) {
       setControlsPosition({
-        top: rect.top - editorRect.top,
-        left: rect.right - editorRect.left - 120 // Offset to position controls to the right
+        top: rect.top - editorRect.top + editorRef.current.scrollTop + rect.height / 2,
+        left: rect.right - editorRect.left + 8
       });
     }
     
@@ -146,7 +146,7 @@ export const useCollapsibleControls = ({ editorRef, onContentChange }: UseCollap
         
         if (editorRect) {
           setControlsPosition({
-            top: rect.top - editorRect.top + rect.height / 2,
+            top: rect.top - editorRect.top + editorRef.current.scrollTop + rect.height / 2,
             left: rect.right - editorRect.left + 8
           });
         }
