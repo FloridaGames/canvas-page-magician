@@ -145,7 +145,9 @@ export const useRichTextEditor = ({ value, onChange, inline, courseId, courseDom
         courseDomain,
         onImageChange: handleImageChange,
         className: originalClass,
-        style: { width: '100%', height: '100%', objectFit: 'contain' }
+        style: { width: '100%', height: '100%', objectFit: 'contain' },
+        targetWidth: originalWidth || 1230,
+        targetHeight: originalHeight || 120
       })
     );
   }, [courseId, courseDomain, handleInput]);

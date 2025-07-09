@@ -1,9 +1,11 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
-import { Upload } from 'lucide-react';
+import { Upload, Crop as CropIcon, Check, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
+import ReactCrop, { Crop, PixelCrop } from 'react-image-crop';
+import 'react-image-crop/dist/ReactCrop.css';
 
 interface SelectableImageProps {
   src: string;
@@ -12,6 +14,8 @@ interface SelectableImageProps {
   style?: React.CSSProperties;
   courseId?: string;
   courseDomain?: string;
+  targetWidth?: number;
+  targetHeight?: number;
   onImageChange?: (newSrc: string, fileId: string, fileName: string) => void;
 }
 
@@ -22,12 +26,18 @@ const SelectableImage: React.FC<SelectableImageProps> = ({
   style,
   courseId,
   courseDomain,
+  targetWidth = 1230,
+  targetHeight = 120,
   onImageChange
 }) => {
   const [isSelected, setIsSelected] = useState(false);
   const [currentSrc, setCurrentSrc] = useState(src);
   const [isUploading, setIsUploading] = useState(false);
+  const [showCrop, setShowCrop] = useState(false);
+  const [crop, setCrop] = useState<Crop>();
+  const [tempImageSrc, setTempImageSrc] = useState<string>('');
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const imgRef = useRef<HTMLImageElement>(null);
 
   const handleImageClick = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -39,6 +49,89 @@ const SelectableImage: React.FC<SelectableImageProps> = ({
     e.preventDefault();
     e.stopPropagation();
     fileInputRef.current?.click();
+  };
+
+  const handleCropImage = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setTempImageSrc(currentSrc);
+    setShowCrop(true);
+    setIsSelected(false);
+  };
+
+  const getCroppedImg = useCallback((
+    image: HTMLImageElement,
+    crop: PixelCrop
+  ): Promise<string> => {
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+
+    if (!ctx) {
+      throw new Error('Failed to get canvas context');
+    }
+
+    // Set canvas size to target dimensions
+    canvas.width = targetWidth;
+    canvas.height = targetHeight;
+
+    ctx.drawImage(
+      image,
+      crop.x,
+      crop.y,
+      crop.width,
+      crop.height,
+      0,
+      0,
+      targetWidth,
+      targetHeight
+    );
+
+    return new Promise((resolve) => {
+      canvas.toBlob((blob) => {
+        if (!blob) {
+          throw new Error('Failed to create blob');
+        }
+        resolve(URL.createObjectURL(blob));
+      }, 'image/jpeg', 0.9);
+    });
+  }, [targetWidth, targetHeight]);
+
+  const handleCropComplete = async () => {
+    if (!crop || !imgRef.current) return;
+
+    try {
+      const pixelCrop: PixelCrop = {
+        x: crop.x,
+        y: crop.y,
+        width: crop.width,
+        height: crop.height,
+        unit: 'px'
+      };
+
+      const croppedImageUrl = await getCroppedImg(imgRef.current, pixelCrop);
+      setCurrentSrc(croppedImageUrl);
+      onImageChange?.(croppedImageUrl, '', alt);
+      setShowCrop(false);
+      setTempImageSrc('');
+      
+      toast({
+        title: "Success",
+        description: "Image cropped successfully",
+      });
+    } catch (error) {
+      console.error('Error cropping image:', error);
+      toast({
+        title: "Crop Failed",
+        description: "Failed to crop image",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleCropCancel = () => {
+    setShowCrop(false);
+    setTempImageSrc('');
+    setCrop(undefined);
   };
 
   const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -121,6 +214,69 @@ const SelectableImage: React.FC<SelectableImageProps> = ({
     }
   };
 
+  if (showCrop) {
+    return (
+      <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+        <div className="bg-background rounded-lg max-w-4xl max-h-[90vh] overflow-auto p-6">
+          <div className="mb-4">
+            <h3 className="text-lg font-semibold mb-2">Crop Image</h3>
+            <p className="text-sm text-muted-foreground">
+              Drag to select the area you want to crop. Target size: {targetWidth}x{targetHeight}px
+            </p>
+          </div>
+          
+          <div className="flex justify-center mb-4">
+            <ReactCrop
+              crop={crop}
+              onChange={(c) => setCrop(c)}
+              aspect={targetWidth / targetHeight}
+              className="max-w-full max-h-[60vh]"
+            >
+              <img
+                ref={imgRef}
+                src={tempImageSrc}
+                alt={alt}
+                className="max-w-full max-h-[60vh] object-contain"
+                onLoad={() => {
+                  if (!crop && imgRef.current) {
+                    const { width, height } = imgRef.current;
+                    const aspect = targetWidth / targetHeight;
+                    let cropWidth = width;
+                    let cropHeight = width / aspect;
+                    
+                    if (cropHeight > height) {
+                      cropHeight = height;
+                      cropWidth = height * aspect;
+                    }
+                    
+                    setCrop({
+                      unit: 'px',
+                      x: (width - cropWidth) / 2,
+                      y: (height - cropHeight) / 2,
+                      width: cropWidth,
+                      height: cropHeight,
+                    });
+                  }
+                }}
+              />
+            </ReactCrop>
+          </div>
+
+          <div className="flex justify-end gap-2">
+            <Button onClick={handleCropCancel} variant="outline">
+              <X className="w-4 h-4 mr-2" />
+              Cancel
+            </Button>
+            <Button onClick={handleCropComplete} disabled={!crop}>
+              <Check className="w-4 h-4 mr-2" />
+              Apply Crop
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="relative inline-block">
       <div
@@ -150,9 +306,18 @@ const SelectableImage: React.FC<SelectableImageProps> = ({
         )}
       </div>
 
-      {/* Change Image Button */}
+      {/* Action Buttons */}
       {isSelected && (
-        <div className="absolute top-2 right-2 z-10">
+        <div className="absolute top-2 right-2 z-10 flex gap-2">
+          <Button
+            onClick={handleCropImage}
+            size="sm"
+            variant="secondary"
+            className="shadow-lg"
+          >
+            <CropIcon className="w-4 h-4 mr-2" />
+            Crop
+          </Button>
           <Button
             onClick={handleChangeImage}
             size="sm"
@@ -160,7 +325,7 @@ const SelectableImage: React.FC<SelectableImageProps> = ({
             className="shadow-lg"
           >
             <Upload className="w-4 h-4 mr-2" />
-            {isUploading ? 'Uploading...' : 'Change Image'}
+            {isUploading ? 'Uploading...' : 'Change'}
           </Button>
         </div>
       )}
