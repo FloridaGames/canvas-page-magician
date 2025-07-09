@@ -126,23 +126,42 @@ export const useCollapsibleControls = ({ editorRef, onContentChange }: UseCollap
     details.forEach((detail) => {
       // Remove existing listeners to avoid duplicates
       detail.removeEventListener('click', handleDetailsClick);
+      detail.removeEventListener('mouseenter', handleDetailsClick);
       
-      // Add click listener
+      // Add click listener for content area (not summary)
       detail.addEventListener('click', handleDetailsClick);
       
-      // Add hover effect
+      // Add hover effect and immediate controls on hover
       detail.style.cursor = 'pointer';
-      detail.style.transition = 'border-color 0.2s';
+      detail.style.transition = 'all 0.2s';
+      detail.style.position = 'relative';
       
-      const originalBorderColor = detail.style.borderColor;
-      
-      detail.addEventListener('mouseenter', () => {
+      const handleMouseEnter = () => {
         detail.style.borderColor = 'hsl(var(--primary))';
-      });
+        detail.style.boxShadow = '0 0 0 1px hsl(var(--primary) / 0.2)';
+        
+        // Show controls immediately on hover
+        const rect = detail.getBoundingClientRect();
+        const editorRect = editorRef.current?.getBoundingClientRect();
+        
+        if (editorRect) {
+          setControlsPosition({
+            top: rect.top - editorRect.top + rect.height / 2,
+            left: rect.right - editorRect.left + 8
+          });
+        }
+        
+        setSelectedDetails(detail);
+        setShowControls(true);
+      };
       
-      detail.addEventListener('mouseleave', () => {
-        detail.style.borderColor = originalBorderColor || 'hsl(var(--border))';
-      });
+      const handleMouseLeave = () => {
+        detail.style.borderColor = 'hsl(var(--border))';
+        detail.style.boxShadow = 'none';
+      };
+      
+      detail.addEventListener('mouseenter', handleMouseEnter);
+      detail.addEventListener('mouseleave', handleMouseLeave);
     });
   }, [editorRef, handleDetailsClick]);
 

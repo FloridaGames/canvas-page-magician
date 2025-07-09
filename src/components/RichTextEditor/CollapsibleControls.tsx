@@ -17,11 +17,11 @@ export const CollapsibleControls = ({
 }: CollapsibleControlsProps) => {
   return (
     <div 
-      className="absolute z-50 flex gap-1 bg-background border border-border rounded-lg shadow-lg p-1"
+      className="absolute z-50 flex gap-1 bg-background border border-border rounded-lg shadow-lg p-1 animate-fade-in"
       style={{ 
         top: position.top, 
         left: position.left,
-        transform: 'translateY(-100%)' 
+        transform: 'translateX(-100%) translateY(-50%)' 
       }}
     >
       <Button

@@ -11,10 +11,9 @@ import {
   Link as LinkIcon,
   Image as ImageIcon,
   Code,
-  Quote,
-  ChevronDown
+  Quote
 } from 'lucide-react';
-import { execCommand, insertBlockquote, insertCode, insertLink, insertImage, editHTML, insertCollapsible } from './utils/formatting';
+import { execCommand, insertBlockquote, insertCode, insertLink, insertImage, editHTML } from './utils/formatting';
 
 interface MenuBarProps {
   editorRef: React.RefObject<HTMLDivElement>;
@@ -140,15 +139,6 @@ export const MenuBar = ({ editorRef, onInput }: MenuBarProps) => {
         <ImageIcon className="h-4 w-4" />
       </Button>
 
-      <Button
-        type="button"
-        variant="ghost"
-        size="sm"
-        onClick={() => insertCollapsible(editorRef, onInput)}
-        title="Insert collapsible section"
-      >
-        <ChevronDown className="h-4 w-4" />
-      </Button>
 
       <div className="ml-auto">
         <Button
