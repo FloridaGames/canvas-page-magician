@@ -1,5 +1,6 @@
 import { MenuBar } from './RichTextEditor/MenuBar';
 import { useRichTextEditor } from './RichTextEditor/hooks/useRichTextEditor';
+import { CollapsibleControls } from './RichTextEditor/CollapsibleControls';
 
 interface RichTextEditorProps {
   value: string;
@@ -28,6 +29,7 @@ export const RichTextEditor = ({
     handleBlur,
     handleSelection,
     handlePaste,
+    collapsibleControls,
   } = useRichTextEditor({ value, onChange, inline, courseId, courseDomain });
 
   return (
@@ -54,10 +56,22 @@ export const RichTextEditor = ({
         }}
       />
       
+      {/* Collapsible Controls */}
+      {collapsibleControls.showControls && !inline && (
+        <div className="collapsible-controls">
+          <CollapsibleControls
+            onDuplicate={collapsibleControls.handleDuplicate}
+            onAddBelow={collapsibleControls.handleAddBelow}
+            onRemove={collapsibleControls.handleRemove}
+            position={collapsibleControls.controlsPosition}
+          />
+        </div>
+      )}
+      
       {/* Debug info */}
       {value && value.includes('<details') && !inline && (
         <div className="mt-2 p-2 bg-green-50 border border-green-200 rounded text-xs text-green-700">
-          ✓ Canvas LMS details/summary elements detected and preserved
+          ✓ Canvas LMS details/summary elements detected and preserved - Click on sections to duplicate, add, or remove
         </div>
       )}
 

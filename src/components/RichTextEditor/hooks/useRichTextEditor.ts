@@ -2,6 +2,7 @@ import { useRef, useEffect, useCallback, useState } from 'react';
 import SelectableImage from '../SelectableImage';
 import { createRoot } from 'react-dom/client';
 import React from 'react';
+import { useCollapsibleControls } from './useCollapsibleControls';
 
 interface UseRichTextEditorProps {
   value: string;
@@ -14,6 +15,17 @@ interface UseRichTextEditorProps {
 export const useRichTextEditor = ({ value, onChange, inline, courseId, courseDomain }: UseRichTextEditorProps) => {
   const editorRef = useRef<HTMLDivElement>(null);
   const [showToolbar, setShowToolbar] = useState(!inline);
+
+  // Initialize collapsible controls hook
+  const collapsibleControls = useCollapsibleControls({
+    editorRef,
+    onContentChange: () => {
+      if (editorRef.current) {
+        const content = editorRef.current.innerHTML;
+        onChange(content);
+      }
+    }
+  });
 
   // Update editor content when value changes
   useEffect(() => {
@@ -213,5 +225,6 @@ export const useRichTextEditor = ({ value, onChange, inline, courseId, courseDom
     handleBlur,
     handleSelection,
     handlePaste,
+    collapsibleControls,
   };
 };
