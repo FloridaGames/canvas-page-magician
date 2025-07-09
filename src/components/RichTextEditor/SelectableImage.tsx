@@ -148,11 +148,11 @@ const SelectableImage: React.FC<SelectableImageProps> = ({
       return;
     }
 
-    // Validate file size (max 5MB)
-    if (file.size > 5 * 1024 * 1024) {
+    // Validate file size (max 25MB)
+    if (file.size > 25 * 1024 * 1024) {
       toast({
         title: "File Too Large",
-        description: "Please select an image smaller than 5MB",
+        description: "Please select an image smaller than 25MB",
         variant: "destructive",
       });
       return;
