@@ -85,8 +85,11 @@ export const useRichTextEditor = ({ value, onChange, inline, courseId, courseDom
   const replaceImageWithSelectableImage = useCallback((imgElement: HTMLImageElement) => {
     const currentSrc = imgElement.src;
     const currentAlt = imgElement.alt || 'Image';
-    const originalWidth = imgElement.width || imgElement.offsetWidth;
-    const originalHeight = imgElement.height || imgElement.offsetHeight;
+    
+    // Get the actual displayed dimensions of the image
+    const computedStyle = window.getComputedStyle(imgElement);
+    const originalWidth = imgElement.offsetWidth || parseInt(computedStyle.width) || imgElement.naturalWidth || 1230;
+    const originalHeight = imgElement.offsetHeight || parseInt(computedStyle.height) || imgElement.naturalHeight || 120;
     const originalStyle = imgElement.style.cssText;
     const originalClass = imgElement.className;
     

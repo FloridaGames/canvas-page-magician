@@ -160,13 +160,67 @@ const SelectableImage: React.FC<SelectableImageProps> = ({
 
     setIsUploading(true);
 
+    // Check uploaded image dimensions vs target dimensions
+    const checkImageDimensions = (file: File): Promise<{ width: number; height: number }> => {
+      return new Promise((resolve) => {
+        const img = new Image();
+        img.onload = () => {
+          resolve({ width: img.naturalWidth, height: img.naturalHeight });
+        };
+        img.src = URL.createObjectURL(file);
+      });
+    };
+
     try {
+      const uploadedImageDims = await checkImageDimensions(file);
+      
+      // Show warning if uploaded image is smaller than target dimensions
+      if (uploadedImageDims.width < targetWidth || uploadedImageDims.height < targetHeight) {
+        toast({
+          title: "Image Size Warning",
+          description: `Uploaded image (${uploadedImageDims.width}×${uploadedImageDims.height}) is smaller than expected (${targetWidth}×${targetHeight}). Image may appear pixelated when scaled.`,
+          variant: "destructive",
+        });
+      }
+
+      // Scale the uploaded image to target dimensions
+      const scaleImageToTargetSize = (file: File): Promise<File> => {
+        return new Promise((resolve) => {
+          const canvas = document.createElement('canvas');
+          const ctx = canvas.getContext('2d');
+          const img = new Image();
+          
+          img.onload = () => {
+            canvas.width = targetWidth;
+            canvas.height = targetHeight;
+            
+            if (ctx) {
+              ctx.drawImage(img, 0, 0, targetWidth, targetHeight);
+              canvas.toBlob((blob) => {
+                if (blob) {
+                  const scaledFile = new File([blob], file.name, { type: file.type });
+                  resolve(scaledFile);
+                } else {
+                  resolve(file); // Fallback to original file
+                }
+              }, file.type, 0.9);
+            } else {
+              resolve(file); // Fallback to original file
+            }
+          };
+          
+          img.src = URL.createObjectURL(file);
+        });
+      };
+
+      const scaledFile = await scaleImageToTargetSize(file);
+
       if (courseId && courseDomain) {
-        // Upload to Canvas
+        // Upload to Canvas using scaled file
         const base64 = await new Promise<string>((resolve) => {
           const reader = new FileReader();
           reader.onload = () => resolve(reader.result as string);
-          reader.readAsDataURL(file);
+          reader.readAsDataURL(scaledFile);
         });
 
         const { data, error } = await supabase.functions.invoke('canvas-image-upload', {
@@ -174,8 +228,8 @@ const SelectableImage: React.FC<SelectableImageProps> = ({
             domain: courseDomain,
             courseId: courseId,
             imageFile: base64,
-            fileName: file.name,
-            mimeType: file.type,
+            fileName: scaledFile.name,
+            mimeType: scaledFile.type,
           },
         });
 
@@ -188,13 +242,13 @@ const SelectableImage: React.FC<SelectableImageProps> = ({
 
         toast({
           title: "Success",
-          description: "Image uploaded successfully",
+          description: "Image uploaded and scaled successfully",
         });
       } else {
-        // Fallback to local preview
-        const newImageUrl = URL.createObjectURL(file);
+        // Fallback to local preview using scaled file
+        const newImageUrl = URL.createObjectURL(scaledFile);
         setCurrentSrc(newImageUrl);
-        onImageChange?.(newImageUrl, '', file.name);
+        onImageChange?.(newImageUrl, '', scaledFile.name);
       }
 
       setIsSelected(false); // Deselect after successful upload
