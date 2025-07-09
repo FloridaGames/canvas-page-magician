@@ -49,3 +49,22 @@ export const editHTML = (editorRef?: React.RefObject<HTMLDivElement>, onInput?: 
     }
   }
 };
+
+export const insertCollapsible = (editorRef?: React.RefObject<HTMLDivElement>, onInput?: () => void) => {
+  const details = document.createElement('details');
+  details.className = 'border border-border rounded p-2 my-2';
+  
+  const summary = document.createElement('summary');
+  summary.className = 'font-medium cursor-pointer mb-2';
+  summary.textContent = 'Click to expand/collapse';
+  
+  const content = document.createElement('div');
+  content.innerHTML = '<p>Add your content here... Click outside this section to see the controls for duplicating, adding, or removing sections.</p>';
+  
+  details.appendChild(summary);
+  details.appendChild(content);
+  
+  document.execCommand('insertHTML', false, details.outerHTML);
+  editorRef?.current?.focus();
+  onInput?.();
+};

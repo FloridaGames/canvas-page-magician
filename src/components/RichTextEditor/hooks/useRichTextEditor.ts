@@ -210,8 +210,24 @@ export const useRichTextEditor = ({ value, onChange, inline, courseId, courseDom
       
       observer.observe(editor, { childList: true, subtree: true });
       
+      // Also setup collapsible listeners when content changes
+      const setupListeners = () => {
+        processExistingImages();
+        collapsibleControls.setupCollapsibleListeners();
+      };
+      
+      setupListeners();
+      
+      // Setup observer for both images and collapsible elements
+      const fullObserver = new MutationObserver(() => {
+        setupListeners();
+      });
+      
+      fullObserver.observe(editor, { childList: true, subtree: true });
+      
       return () => {
         observer.disconnect();
+        fullObserver.disconnect();
       };
     }
   }, [processExistingImages, value]);
