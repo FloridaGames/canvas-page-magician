@@ -6,7 +6,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import ReactCrop, { Crop, PixelCrop } from 'react-image-crop';
 import 'react-image-crop/dist/ReactCrop.css';
-import { useImageSize } from 'react-image-size';
+
 
 interface SelectableImageProps {
   src: string;
@@ -41,15 +41,21 @@ const SelectableImage: React.FC<SelectableImageProps> = ({
   const fileInputRef = useRef<HTMLInputElement>(null);
   const imgRef = useRef<HTMLImageElement>(null);
 
-  // Get image dimensions using react-image-size
-  const [dimensions, { loading: dimensionsLoading, error: dimensionsError }] = useImageSize(currentSrc);
+  // Manual dimension detection
+  const [imageDimensions, setImageDimensions] = useState<{width: number, height: number} | null>(null);
 
-  // Store dimensions when image is selected and dimensions are loaded
+  // Get image dimensions when image loads
+  const handleImageLoad = useCallback((e: React.SyntheticEvent<HTMLImageElement>) => {
+    const img = e.currentTarget;
+    setImageDimensions({ width: img.naturalWidth, height: img.naturalHeight });
+  }, []);
+
+  // Store dimensions when image is selected and dimensions are available
   useEffect(() => {
-    if (isSelected && dimensions && !dimensionsLoading && !dimensionsError) {
-      setStoredDimensions({ width: dimensions.width, height: dimensions.height });
+    if (isSelected && imageDimensions) {
+      setStoredDimensions(imageDimensions);
     }
-  }, [isSelected, dimensions, dimensionsLoading, dimensionsError]);
+  }, [isSelected, imageDimensions]);
 
   const handleImageClick = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -387,6 +393,7 @@ const SelectableImage: React.FC<SelectableImageProps> = ({
             position: 'relative',
             ...style
           }}
+          onLoad={handleImageLoad}
         />
 
         {/* Selection overlay */}
