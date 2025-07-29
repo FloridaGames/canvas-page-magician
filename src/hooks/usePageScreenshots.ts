@@ -102,20 +102,25 @@ export const usePageScreenshots = (pages: CanvasPage[], courseUrl: string) => {
     return getFallbackImage(page.page_id);
   };
 
-  // Get fallback placeholder image
+  // Get fallback placeholder image from Cloudinary
   const getFallbackImage = (pageId: string | number) => {
     const images = [
-      'photo-1488590528505-98d2b5aba04b', // laptop
-      'photo-1486312338219-ce68d2c6f44d', // macbook pro
-      'photo-1487058792275-0ad4aaf24ca7', // colorful code
-      'photo-1498050108023-c5249f4df085', // code screen
-      'photo-1473091534298-04dcbce3278c'  // stylus tablet
+      'photo-1649972904349-6e44c42644a7', // woman sitting on a bed using a laptop
+      'photo-1488590528505-98d2b5aba04b', // turned on gray laptop computer
+      'photo-1518770660439-4636190af475', // macro photography of black circuit board
+      'photo-1461749280684-dccba630e2f6', // monitor showing Java programming
+      'photo-1486312338219-ce68d2c6f44d', // person using MacBook Pro
+      'photo-1581091226825-a6a2a5aee158', // woman in white long sleeve shirt using black laptop computer
+      'photo-1485827404703-89b55fcc595e', // white robot near brown wall
+      'photo-1526374965328-7f61d4dc18c5', // Matrix movie still
+      'photo-1531297484001-80022131f5a1', // gray and black laptop computer on surface
+      'photo-1487058792275-0ad4aaf24ca7'  // Colorful software or web code on a computer monitor
     ];
     
     const idString = String(pageId);
     const hash = idString.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
     const index = hash % images.length;
-    return `https://images.unsplash.com/${images[index]}?w=400&h=300&fit=crop`;
+    return `https://res.cloudinary.com/fontys/image/upload/v1753781108/BachelorBestuurskunde/screenshots/${images[index]}.jpg`;
   };
 
   // Get cached screenshot or fallback
