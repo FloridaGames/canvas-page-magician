@@ -22,9 +22,6 @@ import {
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { Course, CanvasPage } from "@/pages/Index";
-import { usePageScreenshots } from "@/hooks/usePageScreenshots";
-import { ScreenCaptureButton } from "@/components/ScreenCaptureButton";
-import { ScreenCaptureInstructions } from "@/components/ScreenCaptureInstructions";
 
 interface PagesListProps {
   course: Course;
@@ -43,8 +40,21 @@ export const PagesList = ({ course, onPageSelect, onNewPage, onDuplicatePage }: 
   const [sortField, setSortField] = useState<"title" | "created_at" | "updated_at" | "published">("title");
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
 
-  // Initialize screenshot hook
-  const { getCachedScreenshot, preloadScreenshots, updateScreenshot, isLoadingScreenshots } = usePageScreenshots(pages, course.url);
+  // Get random screenshot from Canvas folder
+  const getCanvasScreenshot = (pageId: string | number): string => {
+    const screenshots = [
+      'photo-1488590528505-98d2b5aba04b', // laptop
+      'photo-1486312338219-ce68d2c6f44d', // macbook pro
+      'photo-1487058792275-0ad4aaf24ca7', // colorful code
+      'photo-1498050108023-c5249f4df085', // code screen
+      'photo-1473091534298-04dcbce3278c'  // stylus tablet
+    ];
+    
+    const idString = String(pageId);
+    const hash = idString.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+    const index = hash % screenshots.length;
+    return `https://images.unsplash.com/${screenshots[index]}?w=300&h=200&fit=crop`;
+  };
 
   const fetchPages = async (isRefresh = false) => {
     if (isRefresh) {
@@ -137,12 +147,6 @@ export const PagesList = ({ course, onPageSelect, onNewPage, onDuplicatePage }: 
       return 0;
     });
 
-  // Preload screenshots when pages change
-  useEffect(() => {
-    if (pages.length > 0) {
-      preloadScreenshots(sortedAndFilteredPages.slice(0, 8)); // Preload first 8 visible pages
-    }
-  }, [pages, sortedAndFilteredPages, preloadScreenshots]);
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('en-US', {
@@ -226,7 +230,7 @@ export const PagesList = ({ course, onPageSelect, onNewPage, onDuplicatePage }: 
         </div>
       </div>
 
-      <ScreenCaptureInstructions />
+      
 
       {sortedAndFilteredPages.length === 0 ? (
         <Card className="text-center py-12">
@@ -245,71 +249,69 @@ export const PagesList = ({ course, onPageSelect, onNewPage, onDuplicatePage }: 
           </CardContent>
         </Card>
       ) : viewMode === "grid" ? (
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           {sortedAndFilteredPages.map((page) => (
             <Card 
               key={page.page_id} 
-              className="hover:shadow-card-hover transition-all duration-200 cursor-pointer group overflow-hidden"
+              className="hover:shadow-md transition-all duration-200 cursor-pointer group border-2 border-muted rounded-xl overflow-hidden h-fit"
+              onClick={() => onPageSelect(page)}
             >
-              <div className="aspect-video overflow-hidden">
-                <img 
-                  src={getCachedScreenshot(page.page_id)}
-                  alt={page.title}
-                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
-                />
-              </div>
-              
-              <CardHeader className="pb-3">
-                <div className="flex items-start justify-between gap-2">
-                  <CardTitle className="text-base line-clamp-2 group-hover:text-primary transition-colors">
+              <CardHeader className="pb-2 pt-3 px-3">
+                <div className="flex items-start justify-between gap-2 min-h-[2.5rem]">
+                  <CardTitle className="text-sm font-medium line-clamp-2 leading-tight flex-1">
                     {page.title}
                   </CardTitle>
-                  <Badge variant={page.published ? "default" : "secondary"}>
+                  <Badge 
+                    variant={page.published ? "default" : "secondary"}
+                    className="text-xs px-2 py-0.5 flex-shrink-0"
+                  >
                     {page.published ? "Published" : "Draft"}
                   </Badge>
                 </div>
               </CardHeader>
               
-              <CardContent className="pt-0">
-                <div className="text-sm text-muted-foreground mb-4">
-                  <p>Updated: {formatDate(page.updated_at)}</p>
-                  {page.body && (
-                    <p className="line-clamp-2 mt-1">
-                      {page.body.replace(/<[^>]*>/g, '').substring(0, 100)}...
-                    </p>
-                  )}
-                </div>
-                
-                <div className="flex gap-2 mb-3">
-                  <Button 
-                    size="sm" 
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onPageSelect(page);
-                    }}
-                    className="flex-1"
-                  >
-                    <Edit3 className="h-4 w-4 mr-1" />
-                    Edit
-                  </Button>
+              <CardContent className="p-3 pt-0">
+                <div className="flex items-start gap-3">
+                  <div className="w-16 h-12 rounded-md overflow-hidden flex-shrink-0 border border-muted">
+                    <img 
+                      src={getCanvasScreenshot(page.page_id)}
+                      alt={page.title}
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
                   
-                  <Button 
-                    variant="outline" 
-                    size="sm"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onDuplicatePage(page);
-                    }}
-                  >
-                    <Copy className="h-4 w-4" />
-                  </Button>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs text-muted-foreground mb-2">
+                      Update: {formatDate(page.updated_at)}
+                    </p>
+                    
+                    <div className="flex gap-1">
+                      <Button 
+                        size="sm" 
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onPageSelect(page);
+                        }}
+                        className="flex-1 h-7 text-xs"
+                      >
+                        <Edit3 className="h-3 w-3 mr-1" />
+                        Edit
+                      </Button>
+                      
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onDuplicatePage(page);
+                        }}
+                        className="h-7 px-2"
+                      >
+                        <Copy className="h-3 w-3" />
+                      </Button>
+                    </div>
+                  </div>
                 </div>
-                
-                <ScreenCaptureButton
-                  page={page}
-                  courseUrl={course.url}
-                  onScreenshotCaptured={updateScreenshot}
-                />
               </CardContent>
             </Card>
           ))}
@@ -377,7 +379,7 @@ export const PagesList = ({ course, onPageSelect, onNewPage, onDuplicatePage }: 
                   <div className="flex items-center gap-3">
                     <div className="w-12 h-12 rounded-lg overflow-hidden flex-shrink-0">
                       <img 
-                        src={getCachedScreenshot(page.page_id)}
+                        src={getCanvasScreenshot(page.page_id)}
                         alt={page.title}
                         className="w-full h-full object-cover"
                       />
