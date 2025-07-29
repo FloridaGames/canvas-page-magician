@@ -139,6 +139,22 @@ export const PagesList = ({ course, onPageSelect, onNewPage, onDuplicatePage }: 
     });
   };
 
+  const getPageImage = (pageId: string | number) => {
+    const images = [
+      'photo-1488590528505-98d2b5aba04b', // laptop
+      'photo-1486312338219-ce68d2c6f44d', // macbook pro
+      'photo-1487058792275-0ad4aaf24ca7', // colorful code
+      'photo-1498050108023-c5249f4df085', // code screen
+      'photo-1473091534298-04dcbce3278c'  // stylus tablet
+    ];
+    
+    // Use page ID to consistently assign the same image to the same page
+    const idString = String(pageId);
+    const hash = idString.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+    const index = hash % images.length;
+    return `https://images.unsplash.com/${images[index]}?w=400&h=300&fit=crop`;
+  };
+
   if (isLoading) {
     return (
       <div className="max-w-6xl mx-auto">
@@ -234,8 +250,16 @@ export const PagesList = ({ course, onPageSelect, onNewPage, onDuplicatePage }: 
           {sortedAndFilteredPages.map((page) => (
             <Card 
               key={page.page_id} 
-              className="hover:shadow-card-hover transition-all duration-200 cursor-pointer group"
+              className="hover:shadow-card-hover transition-all duration-200 cursor-pointer group overflow-hidden"
             >
+              <div className="aspect-video overflow-hidden">
+                <img 
+                  src={getPageImage(page.page_id)}
+                  alt={page.title}
+                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
+                />
+              </div>
+              
               <CardHeader className="pb-3">
                 <div className="flex items-start justify-between gap-2">
                   <CardTitle className="text-base line-clamp-2 group-hover:text-primary transition-colors">
@@ -345,7 +369,14 @@ export const PagesList = ({ course, onPageSelect, onNewPage, onDuplicatePage }: 
                 onClick={() => onPageSelect(page)}
               >
                 <div className="col-span-5">
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-3">
+                    <div className="w-12 h-12 rounded-lg overflow-hidden flex-shrink-0">
+                      <img 
+                        src={getPageImage(page.page_id)}
+                        alt={page.title}
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
                     <div className="min-w-0 flex-1">
                       <h3 className="font-medium group-hover:text-primary transition-colors truncate">
                         {page.title}
