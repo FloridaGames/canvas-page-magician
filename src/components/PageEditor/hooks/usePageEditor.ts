@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { Course, CanvasPage } from "@/pages/Index";
 import { extractDomainFromUrl } from "../utils";
+import { useScreenCapture } from "@/hooks/useScreenCapture";
 
 interface UsePageEditorProps {
   course: Course;
@@ -17,6 +18,53 @@ export const usePageEditor = ({ course, page, isNewPage, onBack }: UsePageEditor
   const [published, setPublished] = useState(false);
   const [isSaving, setSaving] = useState(false);
   const [hasChanges, setHasChanges] = useState(false);
+  const { capturePageScreenshot } = useScreenCapture();
+
+  const uploadScreenshotToCloudinary = async (imageUrl: string, pageTitle: string) => {
+    try {
+      // Convert data URL to blob
+      const response = await fetch(imageUrl);
+      const blob = await response.blob();
+      
+      // Convert blob to base64
+      const base64Data = await new Promise<string>((resolve) => {
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          const base64 = (reader.result as string).split(',')[1];
+          resolve(base64);
+        };
+        reader.readAsDataURL(blob);
+      });
+
+      const fileName = `${pageTitle.replace(/\s+/g, '_')}.png`;
+      
+      const { data, error } = await supabase.functions.invoke('canvas-image-upload', {
+        body: {
+          domain: getCourseDomain(),
+          courseId: course.id,
+          imageFile: base64Data,
+          fileName: fileName,
+          mimeType: 'image/png'
+        }
+      });
+
+      if (error) {
+        console.error('Error uploading screenshot:', error);
+        return false;
+      }
+
+      if (data.error) {
+        console.error('Error uploading screenshot:', data.error);
+        return false;
+      }
+
+      console.log('Screenshot uploaded successfully:', data);
+      return true;
+    } catch (error) {
+      console.error('Error uploading screenshot:', error);
+      return false;
+    }
+  };
 
   useEffect(() => {
     if (page) {
@@ -92,6 +140,24 @@ export const usePageEditor = ({ course, page, isNewPage, onBack }: UsePageEditor
       });
 
       setHasChanges(false);
+
+      // Capture and upload screenshot after successful save
+      try {
+        // Construct the Canvas page URL
+        const pageUrl = `${course.url}/pages/${data.page_id || (data.url ? data.url.split('/').pop() : '')}`;
+        
+        const screenshotResult = await capturePageScreenshot(pageUrl);
+        
+        if (screenshotResult.success && screenshotResult.imageUrl) {
+          await uploadScreenshotToCloudinary(screenshotResult.imageUrl, title.trim());
+          console.log('Screenshot captured and uploaded successfully');
+        } else {
+          console.warn('Screenshot capture failed:', screenshotResult.error);
+        }
+      } catch (screenshotError) {
+        console.warn('Screenshot process failed:', screenshotError);
+        // Don't fail the entire save process if screenshot fails
+      }
       
       // Go back to pages list after successful save
       setTimeout(() => {
