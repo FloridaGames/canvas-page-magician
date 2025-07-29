@@ -152,7 +152,7 @@ serve(async (req) => {
       JSON.stringify({
         success: true,
         file: fileData,
-        url: fileData.url || `https://${domain}/courses/${courseId}/files/${fileData.id}/preview`,
+        url: `https://${domain}/courses/${courseId}/files/folder/images?preview=${fileData.id}`,
         fileId: fileData.id,
         previewUrl: `/courses/${courseId}/files/${fileData.id}/preview`,
         fileName: fileName,
