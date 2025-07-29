@@ -28,34 +28,56 @@ serve(async (req) => {
       throw new Error('Canvas API key not configured');
     }
 
-    // Construct Canvas API URL for pages with body content
-    const apiUrl = `https://${domain}/api/v1/courses/${courseId}/pages?include[]=body`;
+    // Construct Canvas API URL for pages with body content and high per_page limit
+    const apiUrl = `https://${domain}/api/v1/courses/${courseId}/pages?include[]=body&per_page=100`;
 
     console.log(`Fetching pages with content from: ${apiUrl}`);
 
-    const response = await fetch(apiUrl, {
-      method: 'GET', 
-      headers: {
-        'Authorization': `Bearer ${apiKey}`,
-        'Content-Type': 'application/json',
-      },
-    });
+    let allPages: any[] = [];
+    let nextUrl: string | null = apiUrl;
 
-    if (!response.ok) {
-      if (response.status === 401) {
-        throw new Error('Invalid Canvas API key or unauthorized access');
+    // Handle pagination to get ALL pages
+    while (nextUrl) {
+      const response = await fetch(nextUrl, {
+        method: 'GET', 
+        headers: {
+          'Authorization': `Bearer ${apiKey}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!response.ok) {
+        if (response.status === 401) {
+          throw new Error('Invalid Canvas API key or unauthorized access');
+        }
+        if (response.status === 404) {
+          throw new Error('Course not found or no access to pages');
+        }
+        throw new Error(`Canvas API error: ${response.status} ${response.statusText}`);
       }
-      if (response.status === 404) {
-        throw new Error('Course not found or no access to pages');
+
+      const pagesData = await response.json();
+      allPages = allPages.concat(pagesData);
+
+      // Check for pagination link header
+      const linkHeader = response.headers.get('Link');
+      nextUrl = null;
+      
+      if (linkHeader) {
+        const nextMatch = linkHeader.match(/<([^>]+)>;\s*rel="next"/);
+        if (nextMatch) {
+          nextUrl = nextMatch[1];
+        }
       }
-      throw new Error(`Canvas API error: ${response.status} ${response.statusText}`);
+      
+      console.log(`Fetched ${pagesData.length} pages, total so far: ${allPages.length}`);
     }
 
-    const pagesData = await response.json();
+    console.log(`Total pages fetched: ${allPages.length}`);
 
     // For pages without full content, fetch individual page details
     const pagesWithContent = await Promise.all(
-      pagesData.map(async (page: any) => {
+      allPages.map(async (page: any) => {
         if (!page.body) {
           try {
             // Fetch individual page to get full content
