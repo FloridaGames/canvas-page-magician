@@ -22,6 +22,7 @@ import {
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { Course, CanvasPage } from "@/pages/Index";
+import { usePageScreenshots } from "@/hooks/usePageScreenshots";
 
 interface PagesListProps {
   course: Course;
@@ -39,6 +40,9 @@ export const PagesList = ({ course, onPageSelect, onNewPage, onDuplicatePage }: 
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [sortField, setSortField] = useState<"title" | "created_at" | "updated_at" | "published">("title");
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
+
+  // Initialize screenshot hook
+  const { getCachedScreenshot, preloadScreenshots, isLoadingScreenshots } = usePageScreenshots(pages, course.url);
 
   const fetchPages = async (isRefresh = false) => {
     if (isRefresh) {
@@ -131,28 +135,19 @@ export const PagesList = ({ course, onPageSelect, onNewPage, onDuplicatePage }: 
       return 0;
     });
 
+  // Preload screenshots when pages change
+  useEffect(() => {
+    if (pages.length > 0) {
+      preloadScreenshots(sortedAndFilteredPages.slice(0, 8)); // Preload first 8 visible pages
+    }
+  }, [pages, sortedAndFilteredPages, preloadScreenshots]);
+
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('en-US', {
       year: 'numeric',
       month: 'short',
       day: 'numeric',
     });
-  };
-
-  const getPageImage = (pageId: string | number) => {
-    const images = [
-      'photo-1488590528505-98d2b5aba04b', // laptop
-      'photo-1486312338219-ce68d2c6f44d', // macbook pro
-      'photo-1487058792275-0ad4aaf24ca7', // colorful code
-      'photo-1498050108023-c5249f4df085', // code screen
-      'photo-1473091534298-04dcbce3278c'  // stylus tablet
-    ];
-    
-    // Use page ID to consistently assign the same image to the same page
-    const idString = String(pageId);
-    const hash = idString.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
-    const index = hash % images.length;
-    return `https://images.unsplash.com/${images[index]}?w=400&h=300&fit=crop`;
   };
 
   if (isLoading) {
@@ -254,7 +249,7 @@ export const PagesList = ({ course, onPageSelect, onNewPage, onDuplicatePage }: 
             >
               <div className="aspect-video overflow-hidden">
                 <img 
-                  src={getPageImage(page.page_id)}
+                  src={getCachedScreenshot(page.page_id)}
                   alt={page.title}
                   className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
                 />
@@ -372,7 +367,7 @@ export const PagesList = ({ course, onPageSelect, onNewPage, onDuplicatePage }: 
                   <div className="flex items-center gap-3">
                     <div className="w-12 h-12 rounded-lg overflow-hidden flex-shrink-0">
                       <img 
-                        src={getPageImage(page.page_id)}
+                        src={getCachedScreenshot(page.page_id)}
                         alt={page.title}
                         className="w-full h-full object-cover"
                       />
