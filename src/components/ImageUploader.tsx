@@ -9,9 +9,10 @@ interface ImageUploaderProps {
   onImageSelect: (file: File) => void;
   selectedImage: File | null;
   onRemoveImage: () => void;
+  description?: string;
 }
 
-export const ImageUploader = ({ onImageSelect, selectedImage, onRemoveImage }: ImageUploaderProps) => {
+export const ImageUploader = ({ onImageSelect, selectedImage, onRemoveImage, description }: ImageUploaderProps) => {
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -48,7 +49,7 @@ export const ImageUploader = ({ onImageSelect, selectedImage, onRemoveImage }: I
               <Upload className="h-8 w-8 text-muted-foreground" />
               <div className="text-center">
                 <p className="text-sm text-muted-foreground mb-2">
-                  Upload a custom image for this page
+                  {description || "Upload a custom image for this page"}
                 </p>
                 <Button 
                   variant="outline" 

@@ -18,6 +18,7 @@ export const usePageEditor = ({ course, page, isNewPage, onBack }: UsePageEditor
   const [isSaving, setSaving] = useState(false);
   const [hasChanges, setHasChanges] = useState(false);
   const [customImage, setCustomImage] = useState<File | null>(null);
+  const [showSavePreview, setShowSavePreview] = useState(false);
 
   const uploadCustomImage = async (imageFile: File, pageTitle: string) => {
     try {
@@ -74,9 +75,10 @@ export const usePageEditor = ({ course, page, isNewPage, onBack }: UsePageEditor
     }
     setHasChanges(false);
     setCustomImage(null);
+    setShowSavePreview(false);
   }, [page]);
 
-  const handleSave = async () => {
+  const handleSaveClick = () => {
     if (!title.trim()) {
       toast({
         title: "Validation Error",
@@ -85,7 +87,10 @@ export const usePageEditor = ({ course, page, isNewPage, onBack }: UsePageEditor
       });
       return;
     }
+    setShowSavePreview(true);
+  };
 
+  const handleConfirmSave = async (imageFile?: File | null) => {
     setSaving(true);
 
     try {
@@ -136,11 +141,12 @@ export const usePageEditor = ({ course, page, isNewPage, onBack }: UsePageEditor
       });
 
       setHasChanges(false);
+      setShowSavePreview(false);
 
       // Upload custom image if provided
-      if (customImage) {
+      if (imageFile) {
         try {
-          await uploadCustomImage(customImage, title.trim());
+          await uploadCustomImage(imageFile, title.trim());
           console.log('Custom image uploaded successfully');
         } catch (imageError) {
           console.warn('Custom image upload failed:', imageError);
@@ -165,7 +171,7 @@ export const usePageEditor = ({ course, page, isNewPage, onBack }: UsePageEditor
     }
   };
 
-  const handleInputChange = (field: string, value: string | boolean | File | null) => {
+  const handleInputChange = (field: string, value: string | boolean) => {
     setHasChanges(true);
     
     switch (field) {
@@ -177,9 +183,6 @@ export const usePageEditor = ({ course, page, isNewPage, onBack }: UsePageEditor
         break;
       case 'published':
         setPublished(value as boolean);
-        break;
-      case 'customImage':
-        setCustomImage(value as File | null);
         break;
     }
   };
@@ -204,10 +207,12 @@ export const usePageEditor = ({ course, page, isNewPage, onBack }: UsePageEditor
     published,
     isSaving,
     hasChanges,
-    customImage,
-    handleSave,
+    showSavePreview,
+    handleSaveClick,
+    handleConfirmSave,
     handleInputChange,
     getPageTitle,
     getCourseDomain,
+    setShowSavePreview,
   };
 };

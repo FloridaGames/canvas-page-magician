@@ -3,6 +3,7 @@ import { usePageEditor } from "./PageEditor/hooks/usePageEditor";
 import { PageEditorHeader } from "./PageEditor/PageEditorHeader";
 import { PageDetailsCard } from "./PageEditor/PageDetailsCard";
 import { PageContentCard } from "./PageEditor/PageContentCard";
+import { SavePreviewModal } from "./PageEditor/SavePreviewModal";
 
 interface PageEditorProps {
   course: Course;
@@ -18,11 +19,13 @@ export const PageEditor = ({ course, page, isNewPage, onBack }: PageEditorProps)
     published,
     isSaving,
     hasChanges,
-    customImage,
-    handleSave,
+    showSavePreview,
+    handleSaveClick,
+    handleConfirmSave,
     handleInputChange,
     getPageTitle,
     getCourseDomain,
+    setShowSavePreview,
   } = usePageEditor({ course, page, isNewPage, onBack });
 
   return (
@@ -34,14 +37,13 @@ export const PageEditor = ({ course, page, isNewPage, onBack }: PageEditorProps)
         hasChanges={hasChanges}
         isSaving={isSaving}
         onBack={onBack}
-        onSave={handleSave}
+        onSave={handleSaveClick}
       />
 
       <div className="grid gap-6">
         <PageDetailsCard
           title={title}
           published={published}
-          customImage={customImage}
           onInputChange={handleInputChange}
         />
 
@@ -53,9 +55,19 @@ export const PageEditor = ({ course, page, isNewPage, onBack }: PageEditorProps)
           courseId={course.id}
           courseDomain={getCourseDomain()}
           onInputChange={handleInputChange}
-          onSave={handleSave}
+          onSave={handleSaveClick}
         />
       </div>
+
+      <SavePreviewModal
+        isOpen={showSavePreview}
+        onClose={() => setShowSavePreview(false)}
+        onConfirmSave={handleConfirmSave}
+        title={title}
+        body={body}
+        published={published}
+        isSaving={isSaving}
+      />
     </div>
   );
 };
