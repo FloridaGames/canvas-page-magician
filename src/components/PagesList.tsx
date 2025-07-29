@@ -15,7 +15,9 @@ import {
   Loader2,
   RefreshCw,
   Grid3X3,
-  List
+  List,
+  ChevronUp,
+  ChevronDown
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
@@ -35,6 +37,8 @@ export const PagesList = ({ course, onPageSelect, onNewPage, onDuplicatePage }: 
   const [searchTerm, setSearchTerm] = useState("");
   const [showPublishedOnly, setShowPublishedOnly] = useState(false);
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
+  const [sortField, setSortField] = useState<"title" | "created_at" | "updated_at" | "published">("title");
+  const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
 
   const fetchPages = async (isRefresh = false) => {
     if (isRefresh) {
@@ -83,11 +87,49 @@ export const PagesList = ({ course, onPageSelect, onNewPage, onDuplicatePage }: 
     fetchPages();
   }, [course]);
 
-  const filteredPages = pages.filter(page => {
-    const matchesSearch = page.title.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesPublished = !showPublishedOnly || page.published;
-    return matchesSearch && matchesPublished;
-  });
+  const handleSort = (field: typeof sortField) => {
+    if (sortField === field) {
+      setSortDirection(sortDirection === "asc" ? "desc" : "asc");
+    } else {
+      setSortField(field);
+      setSortDirection("asc");
+    }
+  };
+
+  const sortedAndFilteredPages = [...pages]
+    .filter(page => {
+      const matchesSearch = page.title.toLowerCase().includes(searchTerm.toLowerCase());
+      const matchesPublished = !showPublishedOnly || page.published;
+      return matchesSearch && matchesPublished;
+    })
+    .sort((a, b) => {
+      let aValue: any, bValue: any;
+      
+      switch (sortField) {
+        case "title":
+          aValue = a.title.toLowerCase();
+          bValue = b.title.toLowerCase();
+          break;
+        case "created_at":
+          aValue = new Date(a.created_at);
+          bValue = new Date(b.created_at);
+          break;
+        case "updated_at":
+          aValue = new Date(a.updated_at);
+          bValue = new Date(b.updated_at);
+          break;
+        case "published":
+          aValue = a.published;
+          bValue = b.published;
+          break;
+        default:
+          return 0;
+      }
+      
+      if (aValue < bValue) return sortDirection === "asc" ? -1 : 1;
+      if (aValue > bValue) return sortDirection === "asc" ? 1 : -1;
+      return 0;
+    });
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('en-US', {
@@ -114,7 +156,7 @@ export const PagesList = ({ course, onPageSelect, onNewPage, onDuplicatePage }: 
         <div>
           <h2 className="text-2xl font-bold">Course Pages</h2>
           <p className="text-muted-foreground">
-            {filteredPages.length} of {pages.length} pages
+            {sortedAndFilteredPages.length} of {pages.length} pages
           </p>
         </div>
         
@@ -171,7 +213,7 @@ export const PagesList = ({ course, onPageSelect, onNewPage, onDuplicatePage }: 
         </div>
       </div>
 
-      {filteredPages.length === 0 ? (
+      {sortedAndFilteredPages.length === 0 ? (
         <Card className="text-center py-12">
           <CardContent>
             <FileText className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
@@ -189,7 +231,7 @@ export const PagesList = ({ course, onPageSelect, onNewPage, onDuplicatePage }: 
         </Card>
       ) : viewMode === "grid" ? (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {filteredPages.map((page) => (
+          {sortedAndFilteredPages.map((page) => (
             <Card 
               key={page.page_id} 
               className="hover:shadow-card-hover transition-all duration-200 cursor-pointer group"
@@ -244,60 +286,129 @@ export const PagesList = ({ course, onPageSelect, onNewPage, onDuplicatePage }: 
           ))}
         </div>
       ) : (
-        <div className="space-y-3">
-          {filteredPages.map((page) => (
-            <Card 
-              key={page.page_id} 
-              className="hover:shadow-card-hover transition-all duration-200 cursor-pointer group"
-            >
-              <CardContent className="p-4">
-                <div className="flex items-center justify-between gap-4">
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-3 mb-2">
-                      <h3 className="text-base font-medium group-hover:text-primary transition-colors truncate">
+        <div className="bg-card border rounded-lg overflow-hidden">
+          {/* Table Header */}
+          <div className="grid grid-cols-12 gap-4 p-4 bg-muted/50 border-b font-medium text-sm">
+            <div className="col-span-5">
+              <button 
+                className="flex items-center gap-1 hover:text-primary transition-colors"
+                onClick={() => handleSort("title")}
+              >
+                Page title
+                {sortField === "title" && (
+                  sortDirection === "asc" ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />
+                )}
+              </button>
+            </div>
+            <div className="col-span-2">
+              <button 
+                className="flex items-center gap-1 hover:text-primary transition-colors"
+                onClick={() => handleSort("created_at")}
+              >
+                Creation date
+                {sortField === "created_at" && (
+                  sortDirection === "asc" ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />
+                )}
+              </button>
+            </div>
+            <div className="col-span-2">
+              <button 
+                className="flex items-center gap-1 hover:text-primary transition-colors"
+                onClick={() => handleSort("updated_at")}
+              >
+                Last edit
+                {sortField === "updated_at" && (
+                  sortDirection === "asc" ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />
+                )}
+              </button>
+            </div>
+            <div className="col-span-2">
+              <button 
+                className="flex items-center gap-1 hover:text-primary transition-colors"
+                onClick={() => handleSort("published")}
+              >
+                Published
+                {sortField === "published" && (
+                  sortDirection === "asc" ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />
+                )}
+              </button>
+            </div>
+            <div className="col-span-1">Actions</div>
+          </div>
+          
+          {/* Table Body */}
+          <div className="divide-y">
+            {sortedAndFilteredPages.map((page) => (
+              <div 
+                key={page.page_id} 
+                className="grid grid-cols-12 gap-4 p-4 hover:bg-muted/30 transition-colors group cursor-pointer"
+                onClick={() => onPageSelect(page)}
+              >
+                <div className="col-span-5">
+                  <div className="flex items-center gap-2">
+                    <div className="min-w-0 flex-1">
+                      <h3 className="font-medium group-hover:text-primary transition-colors truncate">
                         {page.title}
                       </h3>
-                      <Badge variant={page.published ? "default" : "secondary"} className="flex-shrink-0">
-                        {page.published ? "Published" : "Draft"}
-                      </Badge>
-                    </div>
-                    <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                      <span>Updated: {formatDate(page.updated_at)}</span>
                       {page.body && (
-                        <span className="truncate">
-                          {page.body.replace(/<[^>]*>/g, '').substring(0, 60)}...
-                        </span>
+                        <p className="text-sm text-muted-foreground mt-1 line-clamp-1">
+                          {page.body.replace(/<[^>]*>/g, '').substring(0, 80)}...
+                        </p>
                       )}
                     </div>
                   </div>
-                  
-                  <div className="flex gap-2 flex-shrink-0">
-                    <Button 
-                      size="sm" 
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onPageSelect(page);
-                      }}
-                    >
-                      <Edit3 className="h-4 w-4 mr-1" />
-                      Edit
-                    </Button>
-                    
-                    <Button 
-                      variant="outline" 
-                      size="sm"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onDuplicatePage(page);
-                      }}
-                    >
-                      <Copy className="h-4 w-4" />
-                    </Button>
-                  </div>
                 </div>
-              </CardContent>
-            </Card>
-          ))}
+                
+                <div className="col-span-2 text-sm text-muted-foreground flex items-center">
+                  {formatDate(page.created_at)}
+                </div>
+                
+                <div className="col-span-2 text-sm text-muted-foreground flex items-center">
+                  {formatDate(page.updated_at)}
+                </div>
+                
+                <div className="col-span-2 flex items-center">
+                  {page.published ? (
+                    <div className="flex items-center gap-2">
+                      <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                      <span className="text-sm text-green-700">Published</span>
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-2">
+                      <div className="w-2 h-2 bg-gray-400 rounded-full"></div>
+                      <span className="text-sm text-muted-foreground">Draft</span>
+                    </div>
+                  )}
+                </div>
+                
+                <div className="col-span-1 flex items-center gap-1">
+                  <Button 
+                    variant="ghost" 
+                    size="sm"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onPageSelect(page);
+                    }}
+                    className="h-8 w-8 p-0"
+                  >
+                    <Edit3 className="h-3 w-3" />
+                  </Button>
+                  
+                  <Button 
+                    variant="ghost" 
+                    size="sm"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onDuplicatePage(page);
+                    }}
+                    className="h-8 w-8 p-0"
+                  >
+                    <Copy className="h-3 w-3" />
+                  </Button>
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
       )}
     </div>
