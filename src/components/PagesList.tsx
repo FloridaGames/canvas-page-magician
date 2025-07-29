@@ -40,34 +40,9 @@ export const PagesList = ({ course, onPageSelect, onNewPage, onDuplicatePage }: 
   const [sortField, setSortField] = useState<"title" | "created_at" | "updated_at" | "published">("title");
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
 
-  // Get screenshot from Cloudinary folder with fallback
-  const getCloudinaryScreenshot = (pageId: string | number): string => {
-    // Try to get actual screenshot first, then fallback to random images
-    const pageIdStr = String(pageId);
-    
-    // First try to get the actual page screenshot
-    const actualScreenshot = `https://res.cloudinary.com/fontys/image/upload/v1753781108/BachelorBestuurskunde/screenshots/page_${pageIdStr}.jpg`;
-    
-    // Fallback images from the same Cloudinary folder
-    const fallbackImages = [
-      'photo-1649972904349-6e44c42644a7', // woman sitting on a bed using a laptop
-      'photo-1488590528505-98d2b5aba04b', // turned on gray laptop computer
-      'photo-1518770660439-4636190af475', // macro photography of black circuit board
-      'photo-1461749280684-dccba630e2f6', // monitor showing Java programming
-      'photo-1486312338219-ce68d2c6f44d', // person using MacBook Pro
-      'photo-1581091226825-a6a2a5aee158', // woman in white long sleeve shirt using black laptop computer
-      'photo-1485827404703-89b55fcc595e', // white robot near brown wall
-      'photo-1526374965328-7f61d4dc18c5', // Matrix movie still
-      'photo-1531297484001-80022131f5a1', // gray and black laptop computer on surface
-      'photo-1487058792275-0ad4aaf24ca7'  // Colorful software or web code on a computer monitor
-    ];
-    
-    const hash = pageIdStr.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
-    const index = hash % fallbackImages.length;
-    const fallbackUrl = `https://res.cloudinary.com/fontys/image/upload/v1753781108/BachelorBestuurskunde/screenshots/${fallbackImages[index]}.jpg`;
-    
-    // Return the actual screenshot URL, but fallback will be handled by the img onError
-    return actualScreenshot;
+  // Use specific Cloudinary screenshot URL
+  const getCloudinaryScreenshot = (): string => {
+    return "https://res.cloudinary.com/fontys/image/upload/v1753781108/BachelorBestuurskunde/screenshots/screenshot1.png";
   };
 
   const fetchPages = async (isRefresh = false) => {
@@ -288,26 +263,9 @@ export const PagesList = ({ course, onPageSelect, onNewPage, onDuplicatePage }: 
                 <div className="flex items-start gap-3">
                    <div className="w-16 h-12 rounded-md overflow-hidden flex-shrink-0 border border-muted">
                      <img 
-                       src={getCloudinaryScreenshot(page.page_id)}
+                       src={getCloudinaryScreenshot()}
                        alt={page.title}
                        className="w-full h-full object-cover"
-                       onError={(e) => {
-                         const fallbackImages = [
-                           'photo-1649972904349-6e44c42644a7',
-                           'photo-1488590528505-98d2b5aba04b',
-                           'photo-1518770660439-4636190af475',
-                           'photo-1461749280684-dccba630e2f6',
-                           'photo-1486312338219-ce68d2c6f44d',
-                           'photo-1581091226825-a6a2a5aee158',
-                           'photo-1485827404703-89b55fcc595e',
-                           'photo-1526374965328-7f61d4dc18c5',
-                           'photo-1531297484001-80022131f5a1',
-                           'photo-1487058792275-0ad4aaf24ca7'
-                         ];
-                         const hash = String(page.page_id).split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
-                         const index = hash % fallbackImages.length;
-                         e.currentTarget.src = `https://res.cloudinary.com/fontys/image/upload/v1753781108/BachelorBestuurskunde/screenshots/${fallbackImages[index]}.jpg`;
-                       }}
                      />
                    </div>
                   
@@ -410,26 +368,9 @@ export const PagesList = ({ course, onPageSelect, onNewPage, onDuplicatePage }: 
                   <div className="flex items-center gap-3">
                      <div className="w-12 h-12 rounded-lg overflow-hidden flex-shrink-0">
                        <img 
-                         src={getCloudinaryScreenshot(page.page_id)}
+                         src={getCloudinaryScreenshot()}
                          alt={page.title}
                          className="w-full h-full object-cover"
-                         onError={(e) => {
-                           const fallbackImages = [
-                             'photo-1649972904349-6e44c42644a7',
-                             'photo-1488590528505-98d2b5aba04b',
-                             'photo-1518770660439-4636190af475',
-                             'photo-1461749280684-dccba630e2f6',
-                             'photo-1486312338219-ce68d2c6f44d',
-                             'photo-1581091226825-a6a2a5aee158',
-                             'photo-1485827404703-89b55fcc595e',
-                             'photo-1526374965328-7f61d4dc18c5',
-                             'photo-1531297484001-80022131f5a1',
-                             'photo-1487058792275-0ad4aaf24ca7'
-                           ];
-                           const hash = String(page.page_id).split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
-                           const index = hash % fallbackImages.length;
-                           e.currentTarget.src = `https://res.cloudinary.com/fontys/image/upload/v1753781108/BachelorBestuurskunde/screenshots/${fallbackImages[index]}.jpg`;
-                         }}
                        />
                      </div>
                     <div className="min-w-0 flex-1">
