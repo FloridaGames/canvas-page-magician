@@ -28,7 +28,17 @@ export const insertCode = (onInput?: () => void) => {
 export const insertLink = (editorRef?: React.RefObject<HTMLDivElement>, onInput?: () => void) => {
   const url = window.prompt('Enter URL:');
   if (url) {
-    execCommand('createLink', url, editorRef, onInput);
+    const linkText = window.getSelection()?.toString() || url;
+    const link = document.createElement('a');
+    link.href = url;
+    link.target = '_blank';
+    link.rel = 'noopener';
+    link.style.borderColor = '#e5e7eb';
+    link.style.textAlign = 'center';
+    link.innerHTML = linkText;
+    document.execCommand('insertHTML', false, link.outerHTML);
+    editorRef?.current?.focus();
+    onInput?.();
   }
 };
 
