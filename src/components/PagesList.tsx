@@ -40,9 +40,10 @@ export const PagesList = ({ course, onPageSelect, onNewPage, onDuplicatePage }: 
   const [sortField, setSortField] = useState<"title" | "created_at" | "updated_at" | "published">("title");
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
 
-  // Use specific Cloudinary screenshot URL
-  const getCloudinaryScreenshot = (): string => {
-    return "https://res.cloudinary.com/fontys/image/upload/v1753781108/BachelorBestuurskunde/screenshots/screenshot1.png";
+  // Generate Cloudinary screenshot URL based on page title
+  const getCloudinaryScreenshot = (pageTitle: string): string => {
+    const formattedTitle = pageTitle.replace(/\s+/g, '_');
+    return `https://res.cloudinary.com/fontys/image/upload/v1753782076/BachelorBestuurskunde/screenshots/${formattedTitle}.png`;
   };
 
   const fetchPages = async (isRefresh = false) => {
@@ -262,11 +263,11 @@ export const PagesList = ({ course, onPageSelect, onNewPage, onDuplicatePage }: 
               <CardContent className="p-3 pt-0">
                 <div className="flex items-start gap-3">
                    <div className="w-16 h-12 rounded-md overflow-hidden flex-shrink-0 border border-muted">
-                     <img 
-                       src={getCloudinaryScreenshot()}
-                       alt={page.title}
-                       className="w-full h-full object-cover"
-                     />
+                      <img 
+                        src={getCloudinaryScreenshot(page.title)}
+                        alt={page.title}
+                        className="w-full h-full object-cover"
+                      />
                    </div>
                   
                   <div className="flex-1 min-w-0">
@@ -368,10 +369,10 @@ export const PagesList = ({ course, onPageSelect, onNewPage, onDuplicatePage }: 
                   <div className="flex items-center gap-3">
                      <div className="w-12 h-12 rounded-lg overflow-hidden flex-shrink-0">
                        <img 
-                         src={getCloudinaryScreenshot()}
-                         alt={page.title}
-                         className="w-full h-full object-cover"
-                       />
+                          src={getCloudinaryScreenshot(page.title)}
+                          alt={page.title}
+                          className="w-full h-full object-cover"
+                        />
                      </div>
                     <div className="min-w-0 flex-1">
                       <h3 className="font-medium group-hover:text-primary transition-colors truncate">
