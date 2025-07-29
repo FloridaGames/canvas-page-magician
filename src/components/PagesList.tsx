@@ -40,20 +40,28 @@ export const PagesList = ({ course, onPageSelect, onNewPage, onDuplicatePage }: 
   const [sortField, setSortField] = useState<"title" | "created_at" | "updated_at" | "published">("title");
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
 
-  // Get random screenshot from Canvas folder
+  // Get random screenshot from Canvas screenshots folder
   const getCanvasScreenshot = (pageId: string | number): string => {
+    // Sample screenshot filenames from the Canvas folder
     const screenshots = [
-      'photo-1488590528505-98d2b5aba04b', // laptop
-      'photo-1486312338219-ce68d2c6f44d', // macbook pro
-      'photo-1487058792275-0ad4aaf24ca7', // colorful code
-      'photo-1498050108023-c5249f4df085', // code screen
-      'photo-1473091534298-04dcbce3278c'  // stylus tablet
+      'screenshot1.png',
+      'screenshot2.png', 
+      'screenshot3.png',
+      'screenshot4.png',
+      'screenshot5.png',
+      'screenshot6.png',
+      'screenshot7.png',
+      'screenshot8.png',
+      'screenshot9.png',
+      'screenshot10.png'
     ];
     
     const idString = String(pageId);
     const hash = idString.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
     const index = hash % screenshots.length;
-    return `https://images.unsplash.com/${screenshots[index]}?w=300&h=200&fit=crop`;
+    
+    // Use the Canvas screenshots folder URL
+    return `https://tilburguniversity.instructure.com/courses/21071/files/folder/screenshots/${screenshots[index]}`;
   };
 
   const fetchPages = async (isRefresh = false) => {
@@ -258,12 +266,12 @@ export const PagesList = ({ course, onPageSelect, onNewPage, onDuplicatePage }: 
             >
               <CardHeader className="pb-2 pt-3 px-3">
                 <div className="flex items-start justify-between gap-2 min-h-[2.5rem]">
-                  <CardTitle className="text-sm font-medium line-clamp-2 leading-tight flex-1">
+                  <CardTitle className="text-base font-semibold line-clamp-2 leading-tight flex-1">
                     {page.title}
                   </CardTitle>
                   <Badge 
                     variant={page.published ? "default" : "secondary"}
-                    className="text-xs px-2 py-0.5 flex-shrink-0"
+                    className="text-[10px] px-1.5 py-0.5 flex-shrink-0 h-fit"
                   >
                     {page.published ? "Published" : "Draft"}
                   </Badge>
