@@ -18,6 +18,7 @@ export const PageEditor = ({ course, page, isNewPage, onBack }: PageEditorProps)
     published,
     isSaving,
     hasChanges,
+    customImage,
     handleSave,
     handleInputChange,
     getPageTitle,
@@ -40,6 +41,7 @@ export const PageEditor = ({ course, page, isNewPage, onBack }: PageEditorProps)
         <PageDetailsCard
           title={title}
           published={published}
+          customImage={customImage}
           onInputChange={handleInputChange}
         />
 

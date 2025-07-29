@@ -3,14 +3,16 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
 import { Eye, FileText } from "lucide-react";
+import { ImageUploader } from "@/components/ImageUploader";
 
 interface PageDetailsCardProps {
   title: string;
   published: boolean;
-  onInputChange: (field: string, value: string | boolean) => void;
+  customImage: File | null;
+  onInputChange: (field: string, value: string | boolean | File | null) => void;
 }
 
-export const PageDetailsCard = ({ title, published, onInputChange }: PageDetailsCardProps) => {
+export const PageDetailsCard = ({ title, published, customImage, onInputChange }: PageDetailsCardProps) => {
   return (
     <Card>
       <CardHeader>
@@ -43,6 +45,14 @@ export const PageDetailsCard = ({ title, published, onInputChange }: PageDetails
               Publish page (make visible to students)
             </Label>
           </div>
+        </div>
+
+        <div className="space-y-2">
+          <ImageUploader
+            onImageSelect={(file) => onInputChange('customImage', file)}
+            selectedImage={customImage}
+            onRemoveImage={() => onInputChange('customImage', null)}
+          />
         </div>
       </CardContent>
     </Card>

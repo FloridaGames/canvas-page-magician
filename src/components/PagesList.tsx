@@ -22,6 +22,7 @@ import {
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { Course, CanvasPage } from "@/pages/Index";
+import { usePageScreenshots } from "@/hooks/usePageScreenshots";
 
 interface PagesListProps {
   course: Course;
@@ -39,12 +40,8 @@ export const PagesList = ({ course, onPageSelect, onNewPage, onDuplicatePage }: 
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [sortField, setSortField] = useState<"title" | "created_at" | "updated_at" | "published">("title");
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
-
-  // Generate Cloudinary screenshot URL based on page title
-  const getCloudinaryScreenshot = (pageTitle: string): string => {
-    const formattedTitle = pageTitle.replace(/\s+/g, '_');
-    return `https://res.cloudinary.com/fontys/image/upload/v1753782076/BachelorBestuurskunde/screenshots/${formattedTitle}.png`;
-  };
+  
+  const { getPageScreenshot } = usePageScreenshots();
 
   const fetchPages = async (isRefresh = false) => {
     if (isRefresh) {
@@ -264,7 +261,7 @@ export const PagesList = ({ course, onPageSelect, onNewPage, onDuplicatePage }: 
                 <div className="flex items-start gap-3">
                    <div className="w-16 h-12 rounded-md overflow-hidden flex-shrink-0 border border-muted">
                       <img 
-                        src={getCloudinaryScreenshot(page.title)}
+                        src={getPageScreenshot(page)}
                         alt={page.title}
                         className="w-full h-full object-cover"
                       />
@@ -369,7 +366,7 @@ export const PagesList = ({ course, onPageSelect, onNewPage, onDuplicatePage }: 
                   <div className="flex items-center gap-3">
                      <div className="w-12 h-12 rounded-lg overflow-hidden flex-shrink-0">
                        <img 
-                          src={getCloudinaryScreenshot(page.title)}
+                          src={getPageScreenshot(page)}
                           alt={page.title}
                           className="w-full h-full object-cover"
                         />
