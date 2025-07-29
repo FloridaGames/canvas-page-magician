@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
+import { Switch } from "@/components/ui/switch";
 import { 
   FileText, 
   Plus, 
@@ -12,7 +13,9 @@ import {
   Eye, 
   EyeOff,
   Loader2,
-  RefreshCw
+  RefreshCw,
+  Grid3X3,
+  List
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
@@ -31,6 +34,7 @@ export const PagesList = ({ course, onPageSelect, onNewPage, onDuplicatePage }: 
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [showPublishedOnly, setShowPublishedOnly] = useState(false);
+  const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
 
   const fetchPages = async (isRefresh = false) => {
     if (isRefresh) {
@@ -147,13 +151,24 @@ export const PagesList = ({ course, onPageSelect, onNewPage, onDuplicatePage }: 
           />
         </div>
         
-        <Button
-          variant={showPublishedOnly ? "default" : "outline"}
-          onClick={() => setShowPublishedOnly(!showPublishedOnly)}
-        >
-          {showPublishedOnly ? <Eye className="h-4 w-4 mr-2" /> : <EyeOff className="h-4 w-4 mr-2" />}
-          {showPublishedOnly ? "Published Only" : "Show All"}
-        </Button>
+        <div className="flex items-center gap-3">
+          <Button
+            variant={showPublishedOnly ? "default" : "outline"}
+            onClick={() => setShowPublishedOnly(!showPublishedOnly)}
+          >
+            {showPublishedOnly ? <Eye className="h-4 w-4 mr-2" /> : <EyeOff className="h-4 w-4 mr-2" />}
+            {showPublishedOnly ? "Published Only" : "Show All"}
+          </Button>
+          
+          <div className="flex items-center gap-2">
+            <Grid3X3 className="h-4 w-4 text-muted-foreground" />
+            <Switch
+              checked={viewMode === "list"}
+              onCheckedChange={(checked) => setViewMode(checked ? "list" : "grid")}
+            />
+            <List className="h-4 w-4 text-muted-foreground" />
+          </div>
+        </div>
       </div>
 
       {filteredPages.length === 0 ? (
@@ -172,7 +187,7 @@ export const PagesList = ({ course, onPageSelect, onNewPage, onDuplicatePage }: 
             </Button>
           </CardContent>
         </Card>
-      ) : (
+      ) : viewMode === "grid" ? (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           {filteredPages.map((page) => (
             <Card 
@@ -223,6 +238,62 @@ export const PagesList = ({ course, onPageSelect, onNewPage, onDuplicatePage }: 
                   >
                     <Copy className="h-4 w-4" />
                   </Button>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      ) : (
+        <div className="space-y-3">
+          {filteredPages.map((page) => (
+            <Card 
+              key={page.page_id} 
+              className="hover:shadow-card-hover transition-all duration-200 cursor-pointer group"
+            >
+              <CardContent className="p-4">
+                <div className="flex items-center justify-between gap-4">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-3 mb-2">
+                      <h3 className="text-base font-medium group-hover:text-primary transition-colors truncate">
+                        {page.title}
+                      </h3>
+                      <Badge variant={page.published ? "default" : "secondary"} className="flex-shrink-0">
+                        {page.published ? "Published" : "Draft"}
+                      </Badge>
+                    </div>
+                    <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                      <span>Updated: {formatDate(page.updated_at)}</span>
+                      {page.body && (
+                        <span className="truncate">
+                          {page.body.replace(/<[^>]*>/g, '').substring(0, 60)}...
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                  
+                  <div className="flex gap-2 flex-shrink-0">
+                    <Button 
+                      size="sm" 
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onPageSelect(page);
+                      }}
+                    >
+                      <Edit3 className="h-4 w-4 mr-1" />
+                      Edit
+                    </Button>
+                    
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onDuplicatePage(page);
+                      }}
+                    >
+                      <Copy className="h-4 w-4" />
+                    </Button>
+                  </div>
                 </div>
               </CardContent>
             </Card>
