@@ -23,6 +23,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { Course, CanvasPage } from "@/pages/Index";
 import { usePageScreenshots } from "@/hooks/usePageScreenshots";
+import { ScreenCaptureButton } from "@/components/ScreenCaptureButton";
+import { ScreenCaptureInstructions } from "@/components/ScreenCaptureInstructions";
 
 interface PagesListProps {
   course: Course;
@@ -42,7 +44,7 @@ export const PagesList = ({ course, onPageSelect, onNewPage, onDuplicatePage }: 
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
 
   // Initialize screenshot hook
-  const { getCachedScreenshot, preloadScreenshots, isLoadingScreenshots } = usePageScreenshots(pages, course.url);
+  const { getCachedScreenshot, preloadScreenshots, updateScreenshot, isLoadingScreenshots } = usePageScreenshots(pages, course.url);
 
   const fetchPages = async (isRefresh = false) => {
     if (isRefresh) {
@@ -224,6 +226,8 @@ export const PagesList = ({ course, onPageSelect, onNewPage, onDuplicatePage }: 
         </div>
       </div>
 
+      <ScreenCaptureInstructions />
+
       {sortedAndFilteredPages.length === 0 ? (
         <Card className="text-center py-12">
           <CardContent>
@@ -276,7 +280,7 @@ export const PagesList = ({ course, onPageSelect, onNewPage, onDuplicatePage }: 
                   )}
                 </div>
                 
-                <div className="flex gap-2">
+                <div className="flex gap-2 mb-3">
                   <Button 
                     size="sm" 
                     onClick={(e) => {
@@ -300,6 +304,12 @@ export const PagesList = ({ course, onPageSelect, onNewPage, onDuplicatePage }: 
                     <Copy className="h-4 w-4" />
                   </Button>
                 </div>
+                
+                <ScreenCaptureButton
+                  page={page}
+                  courseUrl={course.url}
+                  onScreenshotCaptured={updateScreenshot}
+                />
               </CardContent>
             </Card>
           ))}

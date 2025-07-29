@@ -137,10 +137,28 @@ export const usePageScreenshots = (pages: CanvasPage[], courseUrl: string) => {
     await Promise.allSettled(promises);
   };
 
+  // Update screenshot in cache
+  const updateScreenshot = (pageId: string, imageUrl: string) => {
+    const newCacheEntry = {
+      imageUrl,
+      isFallback: false,
+      timestamp: Date.now()
+    };
+
+    const newCache = {
+      ...screenshotCache,
+      [pageId]: newCacheEntry
+    };
+
+    setScreenshotCache(newCache);
+    saveCache(newCache);
+  };
+
   return {
     getCachedScreenshot,
     getPageScreenshot,
     preloadScreenshots,
+    updateScreenshot,
     isLoadingScreenshots,
     screenshotCache
   };
