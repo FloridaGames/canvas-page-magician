@@ -3,7 +3,6 @@ import { usePageEditor } from "./PageEditor/hooks/usePageEditor";
 import { PageEditorHeader } from "./PageEditor/PageEditorHeader";
 import { PageDetailsCard } from "./PageEditor/PageDetailsCard";
 import { PageContentCard } from "./PageEditor/PageContentCard";
-import { SavePreviewModal } from "./PageEditor/SavePreviewModal";
 
 interface PageEditorProps {
   course: Course;
@@ -19,13 +18,10 @@ export const PageEditor = ({ course, page, isNewPage, onBack }: PageEditorProps)
     published,
     isSaving,
     hasChanges,
-    showSavePreview,
     handleSaveClick,
-    handleConfirmSave,
     handleInputChange,
     getPageTitle,
     getCourseDomain,
-    setShowSavePreview,
   } = usePageEditor({ course, page, isNewPage, onBack });
 
   return (
@@ -58,16 +54,6 @@ export const PageEditor = ({ course, page, isNewPage, onBack }: PageEditorProps)
           onSave={handleSaveClick}
         />
       </div>
-
-      <SavePreviewModal
-        isOpen={showSavePreview}
-        onClose={() => setShowSavePreview(false)}
-        onConfirmSave={handleConfirmSave}
-        title={title}
-        body={body}
-        published={published}
-        isSaving={isSaving}
-      />
     </div>
   );
 };

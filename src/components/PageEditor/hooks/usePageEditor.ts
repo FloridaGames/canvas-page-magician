@@ -17,50 +17,6 @@ export const usePageEditor = ({ course, page, isNewPage, onBack }: UsePageEditor
   const [published, setPublished] = useState(false);
   const [isSaving, setSaving] = useState(false);
   const [hasChanges, setHasChanges] = useState(false);
-  const [customImage, setCustomImage] = useState<File | null>(null);
-  const [showSavePreview, setShowSavePreview] = useState(false);
-
-  const uploadCustomImage = async (imageFile: File, pageTitle: string) => {
-    try {
-      // Convert file to base64
-      const base64Data = await new Promise<string>((resolve) => {
-        const reader = new FileReader();
-        reader.onloadend = () => {
-          const base64 = (reader.result as string).split(',')[1];
-          resolve(base64);
-        };
-        reader.readAsDataURL(imageFile);
-      });
-
-      const fileName = `${pageTitle.replace(/\s+/g, '_')}.${imageFile.name.split('.').pop()}`;
-      
-      const { data, error } = await supabase.functions.invoke('canvas-image-upload', {
-        body: {
-          domain: getCourseDomain(),
-          courseId: course.id,
-          imageFile: base64Data,
-          fileName: fileName,
-          mimeType: imageFile.type
-        }
-      });
-
-      if (error) {
-        console.error('Error uploading custom image:', error);
-        return false;
-      }
-
-      if (data.error) {
-        console.error('Error uploading custom image:', data.error);
-        return false;
-      }
-
-      console.log('Custom image uploaded successfully:', data);
-      return true;
-    } catch (error) {
-      console.error('Error uploading custom image:', error);
-      return false;
-    }
-  };
 
   useEffect(() => {
     if (page) {
@@ -74,11 +30,9 @@ export const usePageEditor = ({ course, page, isNewPage, onBack }: UsePageEditor
       setPublished(false);
     }
     setHasChanges(false);
-    setCustomImage(null);
-    setShowSavePreview(false);
   }, [page]);
 
-  const handleSaveClick = () => {
+  const handleSaveClick = async () => {
     if (!title.trim()) {
       toast({
         title: "Validation Error",
@@ -87,10 +41,12 @@ export const usePageEditor = ({ course, page, isNewPage, onBack }: UsePageEditor
       });
       return;
     }
-    setShowSavePreview(true);
+    
+    // Save immediately without showing preview modal
+    await handleConfirmSave();
   };
 
-  const handleConfirmSave = async (imageFile?: File | null) => {
+  const handleConfirmSave = async () => {
     setSaving(true);
 
     try {
@@ -141,18 +97,6 @@ export const usePageEditor = ({ course, page, isNewPage, onBack }: UsePageEditor
       });
 
       setHasChanges(false);
-      setShowSavePreview(false);
-
-      // Upload custom image if provided
-      if (imageFile) {
-        try {
-          await uploadCustomImage(imageFile, title.trim());
-          console.log('Custom image uploaded successfully');
-        } catch (imageError) {
-          console.warn('Custom image upload failed:', imageError);
-          // Don't fail the entire save process if image upload fails
-        }
-      }
       
       // Go back to pages list after successful save
       setTimeout(() => {
@@ -207,12 +151,9 @@ export const usePageEditor = ({ course, page, isNewPage, onBack }: UsePageEditor
     published,
     isSaving,
     hasChanges,
-    showSavePreview,
     handleSaveClick,
-    handleConfirmSave,
     handleInputChange,
     getPageTitle,
     getCourseDomain,
-    setShowSavePreview,
   };
 };
