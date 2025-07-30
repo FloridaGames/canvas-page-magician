@@ -17,12 +17,14 @@ import {
   Grid3X3,
   List,
   ChevronUp,
-  ChevronDown
+  ChevronDown,
+  Trash2
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { Course, CanvasPage } from "@/pages/Index";
 import { usePageScreenshots } from "@/hooks/usePageScreenshots";
+import { DeletePageDialog } from "./DeletePageDialog";
 
 interface PagesListProps {
   course: Course;
@@ -40,6 +42,10 @@ export const PagesList = ({ course, onPageSelect, onNewPage, onDuplicatePage }: 
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [sortField, setSortField] = useState<"title" | "created_at" | "updated_at" | "published">("title");
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
+  const [deleteDialog, setDeleteDialog] = useState<{
+    isOpen: boolean;
+    page: CanvasPage | null;
+  }>({ isOpen: false, page: null });
   
   const { getPageScreenshot } = usePageScreenshots();
 
@@ -84,6 +90,15 @@ export const PagesList = ({ course, onPageSelect, onNewPage, onDuplicatePage }: 
     const match = url.match(/https?:\/\/([^\/]+)/);
     if (!match) throw new Error('Invalid URL');
     return { domain: match[1] };
+  };
+
+  const handleDeletePage = (page: CanvasPage) => {
+    setDeleteDialog({ isOpen: true, page });
+  };
+
+  const handleDeleteConfirmed = () => {
+    // Refresh the pages list after deletion
+    fetchPages(true);
   };
 
   useEffect(() => {
@@ -250,7 +265,7 @@ export const PagesList = ({ course, onPageSelect, onNewPage, onDuplicatePage }: 
                   </CardTitle>
                   <Badge 
                     variant={page.published ? "default" : "secondary"}
-                    className="text-[10px] px-1.5 py-0.5 flex-shrink-0 h-fit"
+                    className="text-[8px] px-1 py-0.5 flex-shrink-0 h-4"
                   >
                     {page.published ? "Published" : "Draft"}
                   </Badge>
@@ -268,18 +283,14 @@ export const PagesList = ({ course, onPageSelect, onNewPage, onDuplicatePage }: 
                    </div>
                   
                   <div className="flex-1 min-w-0">
-                    <p className="text-xs text-muted-foreground mb-2">
-                      Update: {formatDate(page.updated_at)}
-                    </p>
-                    
-                    <div className="flex gap-1">
+                    <div className="flex gap-1 mt-2">
                       <Button 
                         size="sm" 
                         onClick={(e) => {
                           e.stopPropagation();
                           onPageSelect(page);
                         }}
-                        className="flex-1 h-7 text-xs"
+                        className="flex-1 h-6 text-xs px-2"
                       >
                         <Edit3 className="h-3 w-3 mr-1" />
                         Edit
@@ -292,9 +303,21 @@ export const PagesList = ({ course, onPageSelect, onNewPage, onDuplicatePage }: 
                           e.stopPropagation();
                           onDuplicatePage(page);
                         }}
-                        className="h-7 px-2"
+                        className="h-6 px-2"
                       >
                         <Copy className="h-3 w-3" />
+                      </Button>
+
+                      <Button 
+                        variant="destructive" 
+                        size="sm"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDeletePage(page);
+                        }}
+                        className="h-6 px-2"
+                      >
+                        <Trash2 className="h-3 w-3" />
                       </Button>
                     </div>
                   </div>
@@ -430,12 +453,34 @@ export const PagesList = ({ course, onPageSelect, onNewPage, onDuplicatePage }: 
                   >
                     <Copy className="h-3 w-3" />
                   </Button>
+
+                  <Button 
+                    variant="ghost" 
+                    size="sm"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleDeletePage(page);
+                    }}
+                    className="h-8 w-8 p-0 text-destructive hover:text-destructive"
+                  >
+                    <Trash2 className="h-3 w-3" />
+                  </Button>
                 </div>
               </div>
             ))}
           </div>
         </div>
       )}
+
+      <DeletePageDialog
+        isOpen={deleteDialog.isOpen}
+        onClose={() => setDeleteDialog({ isOpen: false, page: null })}
+        onPageDeleted={handleDeleteConfirmed}
+        pageTitle={deleteDialog.page?.title || ""}
+        pageId={deleteDialog.page?.page_id || 0}
+        courseId={course.id}
+        courseDomain={extractDomainFromUrl(course.url).domain}
+      />
     </div>
   );
 };

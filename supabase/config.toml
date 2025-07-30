@@ -34,3 +34,6 @@ verify_jwt = false
 
 [functions.github-upload]
 verify_jwt = false
+
+[functions.canvas-page-delete]
+verify_jwt = false
